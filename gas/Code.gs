@@ -16,7 +16,7 @@ const SLACK_ENABLED = SLACK_WEBHOOK_URL !== 'YOUR_SLACK_WEBHOOK_URL';
 const SLACK_NOTIFY_COLUMNS = ['キックオフ', 'アウトライン作成', 'スライド構成案作成', '台本チェック'];
 
 const COLUMN_MAP = {
-  '担当者': 1,
+  '担当者名': 1,
   'レッスン名': 2,
   'キックオフ': 3,
   'リサーチ': 4,
@@ -37,9 +37,9 @@ const COLUMN_MAP = {
   'サムネイル依頼': 19,
   'サムネイル確認': 20,
   'サムネイル校了': 21,
-  '格納依頼': 22,
-  '格納チェック': 23,
-  '告知依頼': 24,
+  '告知依頼': 22,
+  '格納依頼': 23,
+  '格納チェック': 24,
   '告知終了': 25
 };
 
@@ -51,7 +51,7 @@ const PRE_PROCESS_KEYS = [
 
 const POST_PROCESS_KEYS = [
   '動画編集依頼', '動画初稿チェック', '動画校了確認', 'サムネイル依頼',
-  'サムネイル確認', 'サムネイル校了', '格納依頼', '格納チェック', '告知依頼', '告知終了'
+  'サムネイル確認', 'サムネイル校了', '告知依頼', '格納依頼', '格納チェック', '告知終了'
 ];
 
 // ===== GET =====
@@ -90,7 +90,7 @@ function doPost(e) {
         result = updateCheckbox(body.rowIndex, body.columnName, body.value);
         break;
       case 'addLesson':
-        result = addLesson(body.担当者, body.レッスン名);
+        result = addLesson(body.担当者名, body.レッスン名);
         break;
       case 'deleteLesson':
         result = deleteLesson(body.rowIndex);
@@ -150,7 +150,7 @@ function getAllLessons() {
 
     lessons.push({
       rowIndex: i + DATA_START_ROW,
-      担当者: row[0],
+      担当者名: row[0],
       レッスン名: row[1],
       前工程: preProcess,
       後工程: postProcess,
@@ -178,7 +178,7 @@ function updateCheckbox(rowIndex, columnName, value) {
   // 特定の列でチェックがONになった場合のみSlack通知を送信
   if (value === true && SLACK_ENABLED && SLACK_NOTIFY_COLUMNS.includes(columnName)) {
     try {
-      const assignee = sheet.getRange(rowIndex, COLUMN_MAP['担当者']).getValue();
+      const assignee = sheet.getRange(rowIndex, COLUMN_MAP['担当者名']).getValue();
       const lessonName = sheet.getRange(rowIndex, COLUMN_MAP['レッスン名']).getValue();
 
       // 工程の種別を判定
@@ -257,7 +257,7 @@ function requestReview(rowIndex, columnName) {
   }
 
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-  const assignee = sheet.getRange(rowIndex, COLUMN_MAP['担当者']).getValue();
+  const assignee = sheet.getRange(rowIndex, COLUMN_MAP['担当者名']).getValue();
   const lessonName = sheet.getRange(rowIndex, COLUMN_MAP['レッスン名']).getValue();
 
   sendReviewRequestNotification(assignee, lessonName, columnName);
@@ -296,15 +296,15 @@ function sendReviewRequestNotification(assignee, lessonName, stepName) {
 }
 
 // ===== レッスン追加 =====
-function addLesson(担当者, レッスン名) {
-  if (!担当者 || !レッスン名) {
+function addLesson(担当者名, レッスン名) {
+  if (!担当者名 || !レッスン名) {
     return { error: '担当者名とレッスン名は必須です' };
   }
 
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   const newRow = sheet.getLastRow() + 1;
 
-  sheet.getRange(newRow, 1).setValue(担当者);
+  sheet.getRange(newRow, 1).setValue(担当者名);
   sheet.getRange(newRow, 2).setValue(レッスン名);
 
   // C〜Y列(3〜25)にチェックボックスを挿入

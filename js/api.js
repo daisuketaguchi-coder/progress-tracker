@@ -40,10 +40,10 @@ const API = {
     });
   },
 
-  async addLesson(担当者, レッスン名) {
+  async addLesson(担当者名, レッスン名) {
     return this.postAction({
       action: 'addLesson',
-      担当者,
+      担当者名,
       レッスン名
     });
   },

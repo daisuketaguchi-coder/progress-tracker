@@ -169,7 +169,7 @@ const Components = {
     cardHeader.className = 'card-header';
     cardHeader.innerHTML = `
       <div class="card-info">
-        <span class="card-assignee">${this.escapeHtml(lesson.担当者)}</span>
+        <span class="card-assignee">${this.escapeHtml(lesson.担当者名)}</span>
         <h3 class="card-lesson-name">${this.escapeHtml(lesson.レッスン名)}</h3>
       </div>
       <button class="btn-delete" title="削除">&#10005;</button>
@@ -246,10 +246,10 @@ const Components = {
 
     document.getElementById('addLessonForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      const 担当者 = document.getElementById('inputAssignee').value.trim();
+      const 担当者名 = document.getElementById('inputAssignee').value.trim();
       const レッスン名 = document.getElementById('inputLesson').value.trim();
-      if (担当者 && レッスン名) {
-        onSubmit(担当者, レッスン名);
+      if (担当者名 && レッスン名) {
+        onSubmit(担当者名, レッスン名);
         close();
       }
     });

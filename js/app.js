@@ -20,7 +20,7 @@ const App = {
 
     document.getElementById('addLessonBtn').addEventListener('click', () => {
       Components.createAddModal(
-        (担当者, レッスン名) => this.onAddLesson(担当者, レッスン名),
+        (担当者名, レッスン名) => this.onAddLesson(担当者名, レッスン名),
         () => {}
       );
     });
@@ -61,7 +61,7 @@ const App = {
   updateFilterOptions() {
     const select = document.getElementById('filterAssignee');
     const current = select.value;
-    const assignees = [...new Set(this.state.lessons.map(l => l.担当者).filter(Boolean))];
+    const assignees = [...new Set(this.state.lessons.map(l => l.担当者名).filter(Boolean))];
 
     // 先頭の「全担当者」以外を削除
     while (select.options.length > 1) {
@@ -98,7 +98,7 @@ const App = {
 
     let filtered = this.state.lessons;
     if (this.state.filterAssignee !== 'all') {
-      filtered = filtered.filter(l => l.担当者 === this.state.filterAssignee);
+      filtered = filtered.filter(l => l.担当者名 === this.state.filterAssignee);
     }
 
     if (filtered.length === 0) {
@@ -166,10 +166,10 @@ const App = {
   },
 
   // ===== レッスン追加 =====
-  async onAddLesson(担当者, レッスン名) {
+  async onAddLesson(担当者名, レッスン名) {
     Components.showLoader(true);
     try {
-      const result = await API.addLesson(担当者, レッスン名);
+      const result = await API.addLesson(担当者名, レッスン名);
       if (result.error) {
         Components.showToast('追加失敗: ' + result.error, 'error');
         return;
