@@ -1,0 +1,17 @@
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node (npx http-server等のキャッシュ)
+node_modules/
+
+# Env
+.env
+.env.local
