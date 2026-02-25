@@ -479,34 +479,53 @@ const Components = {
     }, 3000);
   },
 
-  // ========== フォルダリンクモーダル ==========
-  showFolderLinkModal(lessonName, folderUrl) {
+  // ========== 作成リソースリンクモーダル ==========
+  showCreatedLinksModal(lessonName, folderUrl, sheetUrl) {
     const overlay = document.getElementById('modalOverlay');
+
+    let linksHtml = '';
+    if (folderUrl) {
+      linksHtml += `
+        <a href="${this.escapeHtml(folderUrl)}" target="_blank" rel="noopener noreferrer"
+           class="btn-primary" style="display:inline-block; text-decoration:none; padding:10px 24px; color:#fff; background:var(--color-primary); border-radius:6px; margin-bottom:12px;">
+          <i data-lucide="${CONFIG.ICONS.folder}" style="width:16px;height:16px;color:#fff;vertical-align:middle;"></i> Google Driveで開く
+        </a>`;
+    }
+    if (sheetUrl) {
+      linksHtml += `
+        <a href="${this.escapeHtml(sheetUrl)}" target="_blank" rel="noopener noreferrer"
+           class="btn-primary" style="display:inline-block; text-decoration:none; padding:10px 24px; color:#fff; background:${CONFIG.COLORS.前工程}; border-radius:6px;">
+          <i data-lucide="table" style="width:16px;height:16px;color:#fff;vertical-align:middle;"></i> スプレッドシートで開く
+        </a>`;
+    }
+
     overlay.innerHTML = `
       <div class="modal">
         <div class="modal-header">
-          <h2>フォルダ作成完了</h2>
-          <button class="modal-close" id="folderModalCloseBtn">&times;</button>
+          <h2>レッスン登録完了</h2>
+          <button class="modal-close" id="createdLinksCloseBtn">&times;</button>
         </div>
         <div class="modal-body" style="text-align:center; padding:24px;">
           <p style="margin-bottom:16px;">
-            「${this.escapeHtml(lessonName)}」のフォルダが作成されました。
+            「${this.escapeHtml(lessonName)}」のリソースが作成されました。
           </p>
-          <a href="${this.escapeHtml(folderUrl)}" target="_blank" rel="noopener noreferrer"
-             class="btn-primary" style="display:inline-block; text-decoration:none; padding:10px 24px; color:#fff; background:var(--color-primary); border-radius:6px;">
-            <i data-lucide="${CONFIG.ICONS.folder}" style="width:16px;height:16px;color:#fff;vertical-align:middle;"></i> Google Driveで開く
-          </a>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+            ${linksHtml}
+          </div>
         </div>
       </div>
     `;
     overlay.classList.add('active');
+
+    // Lucide アイコン再描画
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
     const close = () => {
       overlay.classList.remove('active');
       overlay.innerHTML = '';
     };
 
-    document.getElementById('folderModalCloseBtn').addEventListener('click', close);
+    document.getElementById('createdLinksCloseBtn').addEventListener('click', close);
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) close();
     });

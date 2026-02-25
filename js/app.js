@@ -544,12 +544,12 @@ const App = {
         Components.showToast('登録失敗: ' + result.error, 'error');
         return;
       }
-      // フォルダ作成結果に応じたトースト表示
-      if (result.folderUrl) {
-        Components.showToast('レッスンを登録しました（フォルダ作成済み）', 'success');
-        Components.showFolderLinkModal(formData.レッスン名, result.folderUrl);
-      } else if (result.folderError) {
-        Components.showToast('レッスン登録済み（フォルダ作成失敗）', 'info');
+      // フォルダ・シート作成結果に応じたトースト表示
+      if (result.folderUrl || result.sheetUrl) {
+        Components.showToast('レッスンを登録しました', 'success');
+        Components.showCreatedLinksModal(formData.レッスン名, result.folderUrl, result.sheetUrl);
+      } else if (result.folderError || result.sheetError) {
+        Components.showToast('レッスン登録済み（一部リソース作成失敗）', 'info');
       } else {
         Components.showToast('レッスンを登録しました', 'success');
       }

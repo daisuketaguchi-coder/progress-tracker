@@ -15,6 +15,7 @@ const SLACK_ENABLED = SLACK_WEBHOOK_URL !== 'YOUR_SLACK_WEBHOOK_URL';
 // ===== Google Drive設定 =====
 const PARENT_FOLDER_ID = '1NQFsKvPKD-l_GtpILBzy6ip9hqav_7qm';
 const TEMPLATE_FOLDER_ID = '12Qtt9HUAKLWAV4xSeJPSJ8fhscflbUz-';
+const TEMPLATE_SHEET_NAME = '原本（使わない）';
 
 // Slack通知を送る列名（C列:キックオフ, E列:アウトライン作成, G列:スライド構成案作成, L列:台本チェック）
 const SLACK_NOTIFY_COLUMNS = ['キックオフ', 'アウトライン作成', 'スライド構成案作成', '台本チェック'];
@@ -393,9 +394,20 @@ function addLessonWithData(data) {
     folderError = driveErr.message;
   }
 
+  // テンプレートシートをコピー（ベストエフォート）
+  var sheetUrl = null;
+  var sheetError = null;
+  try {
+    sheetUrl = copyTemplateSheet(data.レッスン名);
+  } catch (sheetErr) {
+    sheetError = sheetErr.message;
+  }
+
   var result = { success: true, rowIndex: newRow };
   if (folderUrl) result.folderUrl = folderUrl;
   if (folderError) result.folderError = folderError;
+  if (sheetUrl) result.sheetUrl = sheetUrl;
+  if (sheetError) result.sheetError = sheetError;
   return result;
 }
 
@@ -434,6 +446,23 @@ function copyFolderContents_(source, destination) {
     var newSub = destination.createFolder(folder.getName());
     copyFolderContents_(folder, newSub);
   }
+}
+
+// ===== テンプレートシート コピー =====
+function copyTemplateSheet(lessonName) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var templateSheet = ss.getSheetByName(TEMPLATE_SHEET_NAME);
+  if (!templateSheet) {
+    throw new Error('テンプレートシート「' + TEMPLATE_SHEET_NAME + '」が見つかりません');
+  }
+  // 同名シートが既に存在する場合はエラー
+  if (ss.getSheetByName(lessonName)) {
+    throw new Error('同名のシート「' + lessonName + '」が既に存在します');
+  }
+  var newSheet = templateSheet.copyTo(ss);
+  newSheet.setName(lessonName);
+  var sheetId = newSheet.getSheetId();
+  return 'https://docs.google.com/spreadsheets/d/' + ss.getId() + '/edit#gid=' + sheetId;
 }
 
 // ===== フィールド更新（担当者名・レッスン名） =====
