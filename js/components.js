@@ -4,6 +4,26 @@
 
 const Components = {
 
+  // ========== グラデーションヘルパー ==========
+  _gradientMap: {
+    '#7C3AED': 'linear-gradient(135deg, #7C3AED, #9F67FF)',
+    '#10B981': 'linear-gradient(135deg, #10B981, #34D399)',
+    '#F59E0B': 'linear-gradient(135deg, #F59E0B, #FBBF24)',
+    '#EF4444': 'linear-gradient(135deg, #EF4444, #F87171)',
+    '#9CA3AF': 'linear-gradient(135deg, #9CA3AF, #D1D5DB)'
+  },
+
+  getGradient(color) {
+    return this._gradientMap[color] || color;
+  },
+
+  hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  },
+
   // ========== プログレスバー ==========
   createProgressBar(percent, color, label) {
     const wrapper = document.createElement('div');
@@ -15,7 +35,7 @@ const Components = {
         <span class="progress-percent">${percent}%</span>
       </div>
       <div class="progress-bar">
-        <div class="progress-fill" style="width: ${percent}%; background: ${color};"></div>
+        <div class="progress-fill" style="width: ${percent}%; background: ${this.getGradient(color)};"></div>
       </div>
     `;
     return wrapper;
@@ -126,7 +146,7 @@ const Components = {
 
     const header = document.createElement('div');
     header.className = 'process-header';
-    header.style.background = color;
+    header.style.background = this.getGradient(color);
     header.innerHTML = `
       <span class="process-title">${title}</span>
       <span class="process-toggle">&#9660;</span>
@@ -393,7 +413,7 @@ const Components = {
           <span class="timeline-end">${this.formatDate(lesson.納期)}</span>
         </div>
         <div class="timeline-track">
-          <div class="timeline-progress" style="width:${progressPercent}%; background:${progressColor};"></div>
+          <div class="timeline-progress" style="width:${progressPercent}%; background:${this.getGradient(progressColor)};"></div>
           <div class="timeline-now-marker" style="left:${timePercent}%;" title="今日"></div>
         </div>
       `;
@@ -770,8 +790,9 @@ const Components = {
       btn.dataset.phase = p;
       const c = p === '前工程' ? CONFIG.COLORS.前工程 : CONFIG.COLORS.後工程;
       if (p === phase) {
-        btn.style.background = c;
+        btn.style.background = this.getGradient(c);
         btn.style.color = '#fff';
+        btn.style.boxShadow = `0 2px 8px ${this.hexToRgba(c, 0.3)}`;
       }
       btn.textContent = p;
       toggle.appendChild(btn);
@@ -862,7 +883,7 @@ const Components = {
         const dot = document.createElement('span');
         if (phaseData[step]) {
           dot.className = 'step-dot step-dot--done';
-          dot.style.background = color;
+          dot.style.background = this.getGradient(color);
         } else if (step === nextStepInPhase) {
           dot.className = 'step-dot step-dot--current';
           dot.style.borderColor = color;
@@ -879,7 +900,7 @@ const Components = {
       tdProg.innerHTML = `
         <span class="step-matrix-percent" style="color:${color}">${phasePercent}%</span>
         <div class="step-matrix-minibar">
-          <div class="step-matrix-minibar-fill" style="width:${phasePercent}%;background:${color}"></div>
+          <div class="step-matrix-minibar-fill" style="width:${phasePercent}%;background:${this.getGradient(color)}"></div>
         </div>
       `;
       tr.appendChild(tdProg);
@@ -920,10 +941,10 @@ const Components = {
         dot.title = step;
         if (phaseData[step]) {
           dot.className = 'pipeline-dot pipeline-dot--done';
-          dot.style.background = color;
+          dot.style.background = this.getGradient(color);
         } else if (step === nextStepInPhase) {
           dot.className = 'pipeline-dot pipeline-dot--current';
-          dot.style.background = color;
+          dot.style.background = this.getGradient(color);
         } else {
           dot.className = 'pipeline-dot pipeline-dot--pending';
         }
@@ -1106,7 +1127,7 @@ const Components = {
       card.className = 'kpi-card' + (c.value === 0 ? ' kpi-card--zero' : '');
       card.style.borderLeftColor = c.color;
       card.innerHTML = `
-        <div class="kpi-icon">${c.icon}</div>
+        <div class="kpi-icon" style="background:${this.hexToRgba(c.color, 0.1)}; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center;">${c.icon}</div>
         <div class="kpi-value" style="color:${c.color}">${c.value}</div>
         <div class="kpi-label">${c.label}</div>
       `;
@@ -1134,10 +1155,11 @@ const Components = {
     gauges.forEach(g => {
       const gauge = document.createElement('div');
       gauge.className = 'gauge-item';
-      // conic-gradient で円グラフ風リング
+      // conic-gradient で円グラフ風リング（グラデーショントラック）
       const deg = (g.percent / 100) * 360;
+      const trackColor = CONFIG.GRADIENTS.gaugeTrack;
       gauge.innerHTML = `
-        <div class="gauge-ring" style="background: conic-gradient(${g.color} 0deg, ${g.color} ${deg}deg, #E5E7EB ${deg}deg, #E5E7EB 360deg);">
+        <div class="gauge-ring" style="background: conic-gradient(${g.color} 0deg, ${g.color} ${deg}deg, ${trackColor} ${deg}deg, ${trackColor} 360deg);">
           <div class="gauge-center">${g.percent}%</div>
         </div>
         <div class="gauge-label">${g.label}</div>
@@ -1168,7 +1190,7 @@ const Components = {
             <span class="bottleneck-step-count" style="color:${phaseColor}">${item.count}件</span>
           </div>
           <div class="bottleneck-bar-track">
-            <div class="bottleneck-bar-fill" style="width:${barPercent}%; background:${phaseColor};"></div>
+            <div class="bottleneck-bar-fill" style="width:${barPercent}%; background:${this.getGradient(phaseColor)};"></div>
           </div>
         `;
         list.appendChild(entry);
@@ -1271,7 +1293,7 @@ const Components = {
     header.innerHTML = `
       <span class="status-icon">${config.icon}</span>
       <span class="status-title">${config.label}</span>
-      <span class="status-count" style="background:${config.color}">${lessons.length}</span>
+      <span class="status-count" style="background:${this.getGradient(config.color)}">${lessons.length}</span>
     `;
     col.appendChild(header);
 
@@ -1365,7 +1387,7 @@ const Components = {
       </div>
       <div class="assignee-progress-bar">
         <div class="progress-bar">
-          <div class="progress-fill" style="width:${avgProgress}%;background:${CONFIG.COLORS.primary}"></div>
+          <div class="progress-fill" style="width:${avgProgress}%;background:${this.getGradient(CONFIG.COLORS.primary)}"></div>
         </div>
         <span class="assignee-progress-text">平均 ${avgProgress}%</span>
       </div>

@@ -134,10 +134,22 @@ const CONFIG = {
     danger: '#EF4444',
     success: '#10B981',
     warning: '#F59E0B',
-    bg: '#F8F7FC',
+    bg: '#F6F5FB',
     card: '#FFFFFF',
     text: '#1E1B4B',
     textSub: '#6B7280',
     border: '#E5E7EB'
+  },
+
+  // グラデーション定数（Finazchスタイル）
+  GRADIENTS: {
+    primary:  'linear-gradient(135deg, #7C3AED, #9F67FF)',
+    前工程:    'linear-gradient(135deg, #10B981, #34D399)',
+    後工程:    'linear-gradient(135deg, #F59E0B, #FBBF24)',
+    danger:   'linear-gradient(135deg, #EF4444, #F87171)',
+    success:  'linear-gradient(135deg, #10B981, #34D399)',
+    warning:  'linear-gradient(135deg, #F59E0B, #FBBF24)',
+    muted:    'linear-gradient(135deg, #9CA3AF, #D1D5DB)',
+    gaugeTrack: '#F0EFF6'
   }
 };
