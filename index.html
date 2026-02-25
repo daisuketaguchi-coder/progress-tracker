@@ -10,19 +10,40 @@
 
   <header class="app-header">
     <div class="header-inner">
-      <h1>教材制作進捗管理</h1>
-      <div class="header-controls">
-        <select id="filterAssignee">
-          <option value="all">全担当者</option>
-        </select>
-        <button id="addLessonBtn" class="btn-primary">+ 新規レッスン</button>
+      <div class="header-top-row">
+        <h1>教材制作進捗管理</h1>
+        <div class="header-controls" id="headerControls">
+          <select id="filterAssignee">
+            <option value="all">全担当者</option>
+          </select>
+
+        </div>
       </div>
+      <nav class="header-tabs" id="headerTabs">
+        <button class="tab-btn active" data-view="progress">進捗管理</button>
+        <button class="tab-btn" data-view="entry">データ入力</button>
+        <button class="tab-btn" data-view="review">定例レビュー</button>
+      </nav>
     </div>
   </header>
 
   <main class="app-main">
-    <section id="summary" class="summary-section"></section>
-    <section id="lessonGrid" class="lesson-grid"></section>
+    <!-- ビュー1: 進捗管理（既存） -->
+    <div id="viewProgress" class="view-panel view-active">
+      <section id="summary" class="summary-section"></section>
+      <section id="stepProgressView" class="step-progress-section"></section>
+      <section id="lessonGrid" class="lesson-grid"></section>
+    </div>
+
+    <!-- ビュー2: データ入力 -->
+    <div id="viewEntry" class="view-panel">
+      <section id="entryForm" class="entry-section"></section>
+    </div>
+
+    <!-- ビュー3: 定例レビュー -->
+    <div id="viewReview" class="view-panel">
+      <section id="reviewDashboard" class="review-dashboard"></section>
+    </div>
   </main>
 
   <div id="modalOverlay" class="modal-overlay"></div>

@@ -40,14 +40,6 @@ const API = {
     });
   },
 
-  async addLesson(担当者名, レッスン名) {
-    return this.postAction({
-      action: 'addLesson',
-      担当者名,
-      レッスン名
-    });
-  },
-
   async deleteLesson(rowIndex) {
     return this.postAction({
       action: 'deleteLesson',
@@ -60,6 +52,18 @@ const API = {
       action: 'requestReview',
       rowIndex,
       columnName
+    });
+  },
+
+  async addLessonWithData(formData) {
+    return this.postAction({
+      action: 'addLessonWithData',
+      担当者名: formData.担当者名,
+      レッスン名: formData.レッスン名,
+      initialSteps: formData.initialSteps || {},
+      開始日: formData.開始日 || '',
+      納期: formData.納期 || '',
+      リリース日: formData.リリース日 || ''
     });
   }
 };

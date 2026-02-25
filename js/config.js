@@ -47,6 +47,82 @@ const CONFIG = {
     '台本マネージャーCK'
   ],
 
+  // データ入力フォームのフィールド定義（拡張可能）
+  ENTRY_FORM_FIELDS: [
+    {
+      id: 'assignee',
+      label: '担当者名',
+      type: 'text',
+      required: true,
+      placeholder: '例: 田中太郎',
+      maxlength: 100,
+      columnName: '担当者名'
+    },
+    {
+      id: 'lessonName',
+      label: 'レッスン名',
+      type: 'text',
+      required: true,
+      placeholder: '例: Lesson 01: ビジネスマナー',
+      maxlength: 100,
+      columnName: 'レッスン名'
+    },
+    {
+      id: 'startDate',
+      label: '開始日',
+      type: 'date',
+      required: false,
+      columnName: '開始日'
+    },
+    {
+      id: 'deadline',
+      label: '納期',
+      type: 'date',
+      required: false,
+      columnName: '納期'
+    },
+    {
+      id: 'releaseDate',
+      label: 'リリース日',
+      type: 'date',
+      required: false,
+      columnName: 'リリース日'
+    }
+  ],
+
+  // データ入力フォームで初期工程チェックを表示するか
+  ENTRY_FORM_SHOW_INITIAL_STEPS: true,
+
+  // 日付列名
+  DATE_COLUMNS: ['開始日', '納期', 'リリース日'],
+
+  // 定例レビューダッシュボード設定
+  REVIEW: {
+    STATUS: {
+      RELEASED:     { key: 'released',    label: 'リリース済み', color: '#4CAF50', icon: '✅' },
+      NEAR_RELEASE: { key: 'nearRelease', label: 'リリース間近', color: '#FF9800', icon: '🔜' },
+      IN_PROGRESS:  { key: 'inProgress',  label: '進行中',       color: '#1976D2', icon: '🔧' },
+      NOT_STARTED:  { key: 'notStarted',  label: '未着手',       color: '#9E9E9E', icon: '⏳' }
+    },
+    DELAY_WARNING_DAYS: 7,
+    WORKLOAD: {
+      LIGHT:  { max: 2,        label: '軽', color: '#4CAF50' },
+      MEDIUM: { max: 4,        label: '中', color: '#FF9800' },
+      HEAVY:  { max: Infinity, label: '高', color: '#E53935' }
+    }
+  },
+
+  // 工程別進捗ビュー設定
+  STEP_VIEW: {
+    DEFAULT_PHASE: '前工程',
+    SORT_OPTIONS: [
+      { key: 'default', label: 'デフォルト順' },
+      { key: 'progress_asc', label: '進捗率 昇順' },
+      { key: 'progress_desc', label: '進捗率 降順' },
+      { key: 'assignee', label: '担当者順' }
+    ]
+  },
+
   COLORS: {
     前工程: '#4CAF50',
     前工程Light: '#E8F5E9',

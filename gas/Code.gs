@@ -12,6 +12,10 @@ const SLACK_WEBHOOK_URL = 'YOUR_SLACK_WEBHOOK_URL';
 // 通知を有効にするか（Webhook URL設定前はfalseにしておく）
 const SLACK_ENABLED = SLACK_WEBHOOK_URL !== 'YOUR_SLACK_WEBHOOK_URL';
 
+// ===== Google Drive設定 =====
+const PARENT_FOLDER_ID = '1NQFsKvPKD-l_GtpILBzy6ip9hqav_7qm';
+const TEMPLATE_FOLDER_ID = '12Qtt9HUAKLWAV4xSeJPSJ8fhscflbUz-';
+
 // Slack通知を送る列名（C列:キックオフ, E列:アウトライン作成, G列:スライド構成案作成, L列:台本チェック）
 const SLACK_NOTIFY_COLUMNS = ['キックオフ', 'アウトライン作成', 'スライド構成案作成', '台本チェック'];
 
@@ -40,7 +44,10 @@ const COLUMN_MAP = {
   '告知依頼': 22,
   '格納依頼': 23,
   '格納チェック': 24,
-  '告知終了': 25
+  '告知終了': 25,
+  '開始日': 26,
+  '納期': 27,
+  'リリース日': 28
 };
 
 const PRE_PROCESS_KEYS = [
@@ -98,6 +105,9 @@ function doPost(e) {
       case 'requestReview':
         result = requestReview(body.rowIndex, body.columnName);
         break;
+      case 'addLessonWithData':
+        result = addLessonWithData(body);
+        break;
       default:
         result = { error: '不明なアクション: ' + action };
     }
@@ -122,7 +132,7 @@ function getAllLessons() {
   }
 
   const numRows = lastRow - DATA_START_ROW + 1;
-  const data = sheet.getRange(DATA_START_ROW, 1, numRows, 25).getValues();
+  const data = sheet.getRange(DATA_START_ROW, 1, numRows, 28).getValues();
 
   const lessons = [];
   for (let i = 0; i < data.length; i++) {
@@ -148,6 +158,11 @@ function getAllLessons() {
 
     const totalSteps = PRE_PROCESS_KEYS.length + POST_PROCESS_KEYS.length;
 
+    // 日付列の取得（Date型→ISO文字列に変換）
+    var startDate = row[COLUMN_MAP['開始日'] - 1];
+    var deadline = row[COLUMN_MAP['納期'] - 1];
+    var releaseDate = row[COLUMN_MAP['リリース日'] - 1];
+
     lessons.push({
       rowIndex: i + DATA_START_ROW,
       担当者名: row[0],
@@ -158,7 +173,10 @@ function getAllLessons() {
         全体: Math.round(((preCount + postCount) / totalSteps) * 100),
         前工程: Math.round((preCount / PRE_PROCESS_KEYS.length) * 100),
         後工程: Math.round((postCount / POST_PROCESS_KEYS.length) * 100)
-      }
+      },
+      開始日: (startDate instanceof Date) ? startDate.toISOString() : (startDate || ''),
+      納期: (deadline instanceof Date) ? deadline.toISOString() : (deadline || ''),
+      リリース日: (releaseDate instanceof Date) ? releaseDate.toISOString() : (releaseDate || '')
     });
   }
 
@@ -295,6 +313,19 @@ function sendReviewRequestNotification(assignee, lessonName, stepName) {
   UrlFetchApp.fetch(SLACK_WEBHOOK_URL, options);
 }
 
+// ===== 実データの最終行を取得（カラムA/Bの値で判定） =====
+function getNextDataRow(sheet) {
+  var values = sheet.getRange('A:B').getValues();
+  var lastDataRow = DATA_START_ROW - 1; // ヘッダー行（2行目）
+  for (var i = values.length - 1; i >= DATA_START_ROW - 1; i--) {
+    if (values[i][0] !== '' || values[i][1] !== '') {
+      lastDataRow = i + 1; // 1-indexed
+      break;
+    }
+  }
+  return lastDataRow + 1;
+}
+
 // ===== レッスン追加 =====
 function addLesson(担当者名, レッスン名) {
   if (!担当者名 || !レッスン名) {
@@ -302,7 +333,7 @@ function addLesson(担当者名, レッスン名) {
   }
 
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-  const newRow = sheet.getLastRow() + 1;
+  const newRow = getNextDataRow(sheet);
 
   sheet.getRange(newRow, 1).setValue(担当者名);
   sheet.getRange(newRow, 2).setValue(レッスン名);
@@ -315,6 +346,56 @@ function addLesson(担当者名, レッスン名) {
   return { success: true, rowIndex: newRow };
 }
 
+// ===== レッスン追加（データ入力フォーム用） =====
+function addLessonWithData(data) {
+  if (!data.担当者名 || !data.レッスン名) {
+    return { error: '担当者名とレッスン名は必須です' };
+  }
+
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const newRow = getNextDataRow(sheet);
+
+  // 基本情報を設定
+  sheet.getRange(newRow, 1).setValue(data.担当者名);
+  sheet.getRange(newRow, 2).setValue(data.レッスン名);
+
+  // C〜Y列(3〜25)にチェックボックスを挿入
+  for (var col = 3; col <= 25; col++) {
+    sheet.getRange(newRow, col).insertCheckboxes();
+  }
+
+  // 初期工程ステータスを設定
+  var initialSteps = data.initialSteps || {};
+  for (var stepName in initialSteps) {
+    if (initialSteps[stepName] === true && COLUMN_MAP[stepName]) {
+      sheet.getRange(newRow, COLUMN_MAP[stepName]).setValue(true);
+    }
+  }
+
+  // 日付列を設定
+  var dateColumns = ['開始日', '納期', 'リリース日'];
+  for (var d = 0; d < dateColumns.length; d++) {
+    var colName = dateColumns[d];
+    if (data[colName]) {
+      sheet.getRange(newRow, COLUMN_MAP[colName]).setValue(new Date(data[colName]));
+    }
+  }
+
+  // Google Driveにテンプレートフォルダをコピー（ベストエフォート）
+  var folderUrl = null;
+  var folderError = null;
+  try {
+    folderUrl = copyTemplateFolder(data.レッスン名);
+  } catch (driveErr) {
+    folderError = driveErr.message;
+  }
+
+  var result = { success: true, rowIndex: newRow };
+  if (folderUrl) result.folderUrl = folderUrl;
+  if (folderError) result.folderError = folderError;
+  return result;
+}
+
 // ===== レッスン削除 =====
 function deleteLesson(rowIndex) {
   if (!rowIndex) {
@@ -325,4 +406,29 @@ function deleteLesson(rowIndex) {
   sheet.deleteRow(rowIndex);
 
   return { success: true };
+}
+
+// ===== テンプレートフォルダ コピー =====
+function copyTemplateFolder(lessonName) {
+  var parentFolder = DriveApp.getFolderById(PARENT_FOLDER_ID);
+  var templateFolder = DriveApp.getFolderById(TEMPLATE_FOLDER_ID);
+  var newFolder = parentFolder.createFolder(lessonName);
+  copyFolderContents_(templateFolder, newFolder);
+  return newFolder.getUrl();
+}
+
+function copyFolderContents_(source, destination) {
+  // ファイルをコピー
+  var files = source.getFiles();
+  while (files.hasNext()) {
+    var file = files.next();
+    file.makeCopy(file.getName(), destination);
+  }
+  // サブフォルダを再帰コピー
+  var folders = source.getFolders();
+  while (folders.hasNext()) {
+    var folder = folders.next();
+    var newSub = destination.createFolder(folder.getName());
+    copyFolderContents_(folder, newSub);
+  }
 }
