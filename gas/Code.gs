@@ -13,6 +13,7 @@ const SLACK_WEBHOOK_URL = 'YOUR_SLACK_WEBHOOK_URL';
 const SLACK_ENABLED = SLACK_WEBHOOK_URL !== 'YOUR_SLACK_WEBHOOK_URL';
 
 // ===== Google Drive設定 =====
+const SPREADSHEET_ID = '1UoSunbhvRT1NwyOZ5Mvipj-pJfKV2XftYg35wTY8xWU';
 const PARENT_FOLDER_ID = '1NQFsKvPKD-l_GtpILBzy6ip9hqav_7qm';
 const TEMPLATE_FOLDER_ID = '12Qtt9HUAKLWAV4xSeJPSJ8fhscflbUz-';
 const TEMPLATE_SHEET_NAME = '原本（新バージョン）';
@@ -128,7 +129,7 @@ function doPost(e) {
 
 // ===== データ取得 =====
 function getAllLessons() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
   const lastRow = sheet.getLastRow();
 
   if (lastRow < DATA_START_ROW) {
@@ -194,7 +195,7 @@ function updateCheckbox(rowIndex, columnName, value) {
     return { error: '不明な列名: ' + columnName };
   }
 
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
   sheet.getRange(rowIndex, colNum).setValue(value === true);
 
   // 特定の列でチェックがONになった場合のみSlack通知を送信
@@ -278,7 +279,7 @@ function requestReview(rowIndex, columnName) {
     return { error: 'この項目にはレビュー依頼を送信できません: ' + columnName };
   }
 
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
   const assignee = sheet.getRange(rowIndex, COLUMN_MAP['担当者名']).getValue();
   const lessonName = sheet.getRange(rowIndex, COLUMN_MAP['レッスン名']).getValue();
 
@@ -336,7 +337,7 @@ function addLesson(担当者名, レッスン名) {
     return { error: '担当者名とレッスン名は必須です' };
   }
 
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
   const newRow = getNextDataRow(sheet);
 
   sheet.getRange(newRow, 1).setValue(担当者名);
@@ -356,7 +357,7 @@ function addLessonWithData(data) {
     return { error: '担当者名とレッスン名は必須です' };
   }
 
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
   const newRow = getNextDataRow(sheet);
 
   // 基本情報を設定
@@ -417,7 +418,7 @@ function deleteLesson(rowIndex) {
     return { error: '行番号が必要です' };
   }
 
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
   sheet.deleteRow(rowIndex);
 
   return { success: true };
@@ -450,7 +451,7 @@ function copyFolderContents_(source, destination) {
 
 // ===== テンプレートシート コピー =====
 function copyTemplateSheet(lessonName) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var templateSheet = ss.getSheetByName(TEMPLATE_SHEET_NAME);
   if (!templateSheet) {
     throw new Error('テンプレートシート「' + TEMPLATE_SHEET_NAME + '」が見つかりません');
@@ -482,7 +483,7 @@ function updateField(rowIndex, columnName, value) {
   if (!colNum) {
     return { error: '不明な列名: ' + columnName };
   }
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  var sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
   sheet.getRange(rowIndex, colNum).setValue(value.trim());
   return { success: true, rowIndex: rowIndex, columnName: columnName, value: value.trim() };
 }
