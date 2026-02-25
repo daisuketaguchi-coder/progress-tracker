@@ -30,6 +30,10 @@
   --font: "Inter", "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
   --transition-fast: 0.15s ease;
   --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --glow-primary: 0 0 20px rgba(124,58,237,0.15);
+  --glow-success: 0 0 20px rgba(16,185,129,0.15);
+  --glow-warning: 0 0 20px rgba(245,158,11,0.15);
+  --glow-danger:  0 0 20px rgba(239,68,68,0.15);
 }
 
 /* ----- リセット ----- */
@@ -194,7 +198,11 @@ body {
   position: relative;
   overflow: hidden;
   transition: box-shadow var(--transition-normal), transform var(--transition-normal);
+  animation: fadeInUp 0.5s ease both;
 }
+.stat-card:nth-child(1) { animation-delay: 0s; }
+.stat-card:nth-child(2) { animation-delay: 0.07s; }
+.stat-card:nth-child(3) { animation-delay: 0.14s; }
 
 .stat-card:hover {
   box-shadow: var(--shadow-hover);
@@ -539,8 +547,14 @@ body {
   line-height: 1.4;
 }
 
-.phase-badge-emoji {
-  font-size: 0.85rem;
+.phase-badge-icon {
+  display: inline-flex;
+  align-items: center;
+}
+.phase-badge-icon svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.5;
 }
 
 .phase-badge--completed {
@@ -2381,4 +2395,197 @@ body {
   .step-pipeline-dots {
     gap: 2px;
   }
+}
+
+/* ============================================================
+   プレミアム UI — Lucide Icons + マイクロインタラクション
+   ============================================================ */
+
+/* --- アイコン円形コンテナ --- */
+.icon-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--icon-bg, rgba(124,58,237,0.1));
+  flex-shrink: 0;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.icon-circle:hover {
+  transform: scale(1.08);
+}
+.icon-circle svg {
+  stroke-width: 2;
+}
+
+/* --- Stat カード ヘッダー（アイコン＋数値 横並び） --- */
+.stat-card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+/* --- 入場アニメーション --- */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lesson-card {
+  animation: fadeInUp 0.45s ease both;
+}
+.lesson-card:nth-child(1) { animation-delay: 0s; }
+.lesson-card:nth-child(2) { animation-delay: 0.05s; }
+.lesson-card:nth-child(3) { animation-delay: 0.10s; }
+.lesson-card:nth-child(4) { animation-delay: 0.15s; }
+.lesson-card:nth-child(5) { animation-delay: 0.20s; }
+.lesson-card:nth-child(6) { animation-delay: 0.25s; }
+
+.review-section {
+  animation: fadeInUp 0.5s ease both;
+}
+.review-section:nth-child(1) { animation-delay: 0s; }
+.review-section:nth-child(2) { animation-delay: 0.08s; }
+.review-section:nth-child(3) { animation-delay: 0.16s; }
+.review-section:nth-child(4) { animation-delay: 0.24s; }
+
+/* --- シマーエフェクト（送信ボタン） --- */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  animation: shimmer 3s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0%   { left: -100%; }
+  50%  { left: 150%; }
+  100% { left: 150%; }
+}
+
+/* --- チェックボックス バウンス --- */
+@keyframes checkBounce {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.2); }
+  60%  { transform: scale(0.95); }
+  100% { transform: scale(1.05); }
+}
+.step-checkbox:checked {
+  animation: checkBounce 0.3s ease;
+}
+
+/* --- KPI カード ガラス効果 --- */
+.kpi-card {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: fadeInUp 0.4s ease both;
+}
+.kpi-card:nth-child(1) { animation-delay: 0s; }
+.kpi-card:nth-child(2) { animation-delay: 0.06s; }
+.kpi-card:nth-child(3) { animation-delay: 0.12s; }
+.kpi-card:nth-child(4) { animation-delay: 0.18s; }
+.kpi-card:nth-child(5) { animation-delay: 0.24s; }
+
+/* --- ゲージリング グロー --- */
+.gauge-ring {
+  filter: drop-shadow(0 0 8px var(--gauge-glow, rgba(124,58,237,0.2)));
+}
+
+/* --- セクションタイトル アイコン整列 --- */
+.review-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* --- アラートバー アイコン --- */
+.alert-bar-icon {
+  display: inline-flex;
+  align-items: center;
+}
+.alert-bar-icon svg {
+  stroke-width: 2.5;
+}
+
+/* --- 遅延カード アイコン --- */
+.delay-card-icon {
+  display: inline-flex;
+  align-items: center;
+}
+.delay-card-icon svg {
+  stroke-width: 2.5;
+}
+
+/* --- ステータスカラム アイコン --- */
+.status-icon {
+  display: inline-flex;
+  align-items: center;
+}
+.status-icon svg {
+  stroke-width: 2;
+}
+
+/* --- 遅延カード stuckStep アイコン --- */
+.delay-stuck-step svg {
+  stroke-width: 2;
+}
+
+/* --- ステータス日付 アイコン --- */
+.status-date svg {
+  stroke-width: 2;
+}
+
+/* --- no-delays アイコン --- */
+.no-delays svg {
+  stroke-width: 2;
+}
+
+/* --- レポートテキスト内アイコン --- */
+.report-text svg {
+  stroke-width: 2;
+}
+
+/* --- ボトルネックセクション --- */
+.bottleneck-title svg {
+  stroke-width: 2;
+}
+
+/* --- プロセスヘッダートグルアイコン --- */
+.process-header svg {
+  transition: transform var(--transition-fast);
+}
+
+/* --- 編集・削除ボタン内アイコン --- */
+.editable-trigger svg,
+.card-delete-btn svg {
+  stroke-width: 2;
+}
+
+/* --- 日付行アイコン --- */
+.date-row svg {
+  stroke-width: 2;
+}
+
+/* --- カード遅延バナーアイコン --- */
+.card-delay-banner svg {
+  stroke-width: 2.5;
+}
+
+/* --- フォルダモーダルアイコン --- */
+.folder-modal-icon svg {
+  stroke-width: 1.5;
 }

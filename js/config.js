@@ -99,10 +99,10 @@ const CONFIG = {
   // 定例レビューダッシュボード設定
   REVIEW: {
     STATUS: {
-      RELEASED:     { key: 'released',    label: 'リリース済み', color: '#10B981', icon: '✅' },
-      NEAR_RELEASE: { key: 'nearRelease', label: 'リリース間近', color: '#F59E0B', icon: '🔜' },
-      IN_PROGRESS:  { key: 'inProgress',  label: '進行中',       color: '#7C3AED', icon: '🔧' },
-      NOT_STARTED:  { key: 'notStarted',  label: '未着手',       color: '#9CA3AF', icon: '⏳' }
+      RELEASED:     { key: 'released',    label: 'リリース済み', color: '#10B981', icon: 'circle-check' },
+      NEAR_RELEASE: { key: 'nearRelease', label: 'リリース間近', color: '#F59E0B', icon: 'rocket' },
+      IN_PROGRESS:  { key: 'inProgress',  label: '進行中',       color: '#7C3AED', icon: 'wrench' },
+      NOT_STARTED:  { key: 'notStarted',  label: '未着手',       color: '#9CA3AF', icon: 'hourglass' }
     },
     DELAY_WARNING_DAYS: 7,
     WORKLOAD: {
@@ -151,5 +151,33 @@ const CONFIG = {
     warning:  'linear-gradient(135deg, #F59E0B, #FBBF24)',
     muted:    'linear-gradient(135deg, #9CA3AF, #D1D5DB)',
     gaugeTrack: '#F0EFF6'
+  },
+
+  // Lucide アイコン名マッピング
+  ICONS: {
+    total: 'library',
+    released: 'circle-check',
+    nearRelease: 'rocket',
+    inProgress: 'wrench',
+    notStarted: 'hourglass',
+    前工程: 'wrench',
+    後工程: 'send',
+    danger: 'alert-triangle',
+    warning: 'clock',
+    ok: 'circle-check',
+    calendar: 'calendar',
+    deadline: 'clock',
+    release: 'target',
+    report: 'bar-chart-3',
+    statusList: 'clipboard-list',
+    assignees: 'users',
+    delayAlert: 'triangle-alert',
+    bottleneck: 'search',
+    mapPin: 'map-pin',
+    chevronDown: 'chevron-down',
+    chevronRight: 'chevron-right',
+    edit: 'pencil',
+    delete: 'x',
+    folder: 'folder-open'
   }
 };

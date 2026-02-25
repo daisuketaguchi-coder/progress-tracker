@@ -13,6 +13,11 @@ const App = {
     stepViewSort: 'default'
   },
 
+  // ===== Lucide アイコン再描画 =====
+  refreshIcons() {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  },
+
   // ===== 初期化 =====
   async init() {
     // イベントリスナー
@@ -102,6 +107,7 @@ const App = {
     const container = document.getElementById('summary');
     container.innerHTML = '';
     container.appendChild(Components.createSummary(this.state.lessons));
+    this.refreshIcons();
   },
 
   // ===== 工程別進捗ビュー描画 =====
@@ -142,6 +148,7 @@ const App = {
     }
 
     container.appendChild(view);
+    this.refreshIcons();
   },
 
   // ===== 工程別進捗ビュー: ソート =====
@@ -188,6 +195,7 @@ const App = {
       );
       grid.appendChild(card);
     });
+    this.refreshIcons();
   },
 
   // ===== チェックボックス変更（楽観的更新） =====
@@ -243,6 +251,7 @@ const App = {
     if (existingBadgeRow) {
       existingBadgeRow.replaceWith(Components.createPhaseBadgeRow(lesson));
     }
+    this.refreshIcons();
   },
 
   // ===== レビュー依頼送信 =====
@@ -359,6 +368,7 @@ const App = {
       () => {}
     );
     container.appendChild(form);
+    this.refreshIcons();
   },
 
   // ============================================================
@@ -482,13 +492,13 @@ const App = {
 
     // 遅延状況
     if (stats.delayCount > 0) {
-      lines.push(`<br>⚠️ <span class="report-highlight report-danger">${stats.delayCount}件</span> の教材で納期超過が発生しています。`);
+      lines.push(`<br><i data-lucide="triangle-alert" style="width:16px;height:16px;color:#EF4444;vertical-align:middle;"></i> <span class="report-highlight report-danger">${stats.delayCount}件</span> の教材で納期超過が発生しています。`);
     }
     if (stats.warningCount > 0) {
-      lines.push(`⏰ <span class="report-highlight report-warning">${stats.warningCount}件</span> の教材が納期間近（7日以内）です。`);
+      lines.push(`<i data-lucide="clock" style="width:16px;height:16px;color:#F59E0B;vertical-align:middle;"></i> <span class="report-highlight report-warning">${stats.warningCount}件</span> の教材が納期間近（7日以内）です。`);
     }
     if (stats.delayCount === 0 && stats.warningCount === 0) {
-      lines.push(`<br>✅ 現在、スケジュールの遅延はありません。`);
+      lines.push(`<br><i data-lucide="circle-check" style="width:16px;height:16px;color:#10B981;vertical-align:middle;"></i> 現在、スケジュールの遅延はありません。`);
     }
 
     return lines.join('');
@@ -517,6 +527,7 @@ const App = {
 
     // セクション4: 遅延アラート
     container.appendChild(Components.createDelayAlerts(reviewData.delays));
+    this.refreshIcons();
   },
 
   // ===== データ入力フォーム送信 =====

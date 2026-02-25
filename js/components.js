@@ -24,6 +24,18 @@ const Components = {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   },
 
+  // ========== アイコンヘルパー（Lucide Icons） ==========
+  iconHtml(name, color, size = 40) {
+    const bgColor = this.hexToRgba(color || '#7C3AED', 0.1);
+    return `<span class="icon-circle" style="--icon-bg:${bgColor}; --icon-color:${color || '#7C3AED'}; width:${size}px; height:${size}px;">
+      <i data-lucide="${name}" style="width:${Math.round(size * 0.5)}px; height:${Math.round(size * 0.5)}px; color:${color || '#7C3AED'};"></i>
+    </span>`;
+  },
+
+  iconInline(name, color, size = 16) {
+    return `<i data-lucide="${name}" style="width:${size}px; height:${size}px; color:${color || 'currentColor'}; vertical-align:middle;"></i>`;
+  },
+
   // ========== プログレスバー ==========
   createProgressBar(percent, color, label) {
     const wrapper = document.createElement('div');
@@ -57,15 +69,24 @@ const Components = {
     container.innerHTML = `
       <div class="summary-stat-row">
         <div class="stat-card">
-          <div class="stat-number">${total}</div>
+          <div class="stat-card-header">
+            ${this.iconHtml(CONFIG.ICONS.total, '#7C3AED', 44)}
+            <div class="stat-number">${total}</div>
+          </div>
           <div class="stat-label">総レッスン</div>
         </div>
         <div class="stat-card">
-          <div class="stat-number stat-completed">${completed}</div>
+          <div class="stat-card-header">
+            ${this.iconHtml(CONFIG.ICONS.released, '#10B981', 44)}
+            <div class="stat-number stat-completed">${completed}</div>
+          </div>
           <div class="stat-label">完了</div>
         </div>
         <div class="stat-card">
-          <div class="stat-number stat-progress">${inProgress}</div>
+          <div class="stat-card-header">
+            ${this.iconHtml(CONFIG.ICONS.inProgress, '#F59E0B', 44)}
+            <div class="stat-number stat-progress">${inProgress}</div>
+          </div>
           <div class="stat-label">進行中</div>
         </div>
       </div>
@@ -149,7 +170,7 @@ const Components = {
     header.style.background = this.getGradient(color);
     header.innerHTML = `
       <span class="process-title">${title}</span>
-      <span class="process-toggle">&#9660;</span>
+      <span class="process-toggle"><i data-lucide="${CONFIG.ICONS.chevronDown}" style="width:16px;height:16px;"></i></span>
     `;
 
     const body = document.createElement('div');
@@ -193,7 +214,7 @@ const Components = {
 
     const editBtn = document.createElement('button');
     editBtn.className = 'btn-edit-field';
-    editBtn.innerHTML = '&#9998;';
+    editBtn.innerHTML = `<i data-lucide="${CONFIG.ICONS.edit}" style="width:14px;height:14px;"></i>`;
     editBtn.title = '編集';
 
     display.appendChild(textEl);
@@ -328,7 +349,7 @@ const Components = {
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'btn-delete';
     deleteBtn.title = '削除';
-    deleteBtn.innerHTML = '&#10005;';
+    deleteBtn.innerHTML = `<i data-lucide="${CONFIG.ICONS.delete}" style="width:16px;height:16px;"></i>`;
     deleteBtn.addEventListener('click', () => {
       onDelete(lesson.rowIndex, lesson.レッスン名);
     });
@@ -348,15 +369,15 @@ const Components = {
       const stuckStep = this.getNextPendingStep(lesson);
       if (delay.isDelayed) {
         banner.innerHTML = `
-          <span class="card-delay-icon">🚨</span>
+          <span class="card-delay-icon">${this.iconInline(CONFIG.ICONS.danger, '#EF4444', 18)}</span>
           <span class="card-delay-text">納期を <strong>${delay.daysOverdue}日</strong> 超過</span>
-          ${stuckStep ? `<span class="card-delay-step">📍 ${this.escapeHtml(stuckStep)}</span>` : ''}
+          ${stuckStep ? `<span class="card-delay-step">${this.iconInline(CONFIG.ICONS.mapPin, '#6B7280', 14)} ${this.escapeHtml(stuckStep)}</span>` : ''}
         `;
       } else {
         banner.innerHTML = `
-          <span class="card-delay-icon">⏰</span>
+          <span class="card-delay-icon">${this.iconInline(CONFIG.ICONS.warning, '#92400E', 18)}</span>
           <span class="card-delay-text">納期まで <strong>あと${Math.abs(delay.daysOverdue)}日</strong></span>
-          ${stuckStep ? `<span class="card-delay-step">📍 ${this.escapeHtml(stuckStep)}</span>` : ''}
+          ${stuckStep ? `<span class="card-delay-step">${this.iconInline(CONFIG.ICONS.mapPin, '#6B7280', 14)} ${this.escapeHtml(stuckStep)}</span>` : ''}
         `;
       }
       card.appendChild(banner);
@@ -370,13 +391,13 @@ const Components = {
 
       let dateHtml = '';
       if (lesson.開始日) {
-        dateHtml += `<span class="card-date-item">📅 開始: ${this.formatDate(lesson.開始日)}</span>`;
+        dateHtml += `<span class="card-date-item">${this.iconInline(CONFIG.ICONS.calendar, '#6B7280', 14)} 開始: ${this.formatDate(lesson.開始日)}</span>`;
       }
       if (lesson.納期) {
-        dateHtml += `<span class="card-date-item">⏰ 納期: ${this.formatDate(lesson.納期)}</span>`;
+        dateHtml += `<span class="card-date-item">${this.iconInline(CONFIG.ICONS.deadline, '#6B7280', 14)} 納期: ${this.formatDate(lesson.納期)}</span>`;
       }
       if (lesson.リリース日) {
-        dateHtml += `<span class="card-date-item">🎯 リリース: ${this.formatDate(lesson.リリース日)}</span>`;
+        dateHtml += `<span class="card-date-item">${this.iconInline(CONFIG.ICONS.release, '#6B7280', 14)} リリース: ${this.formatDate(lesson.リリース日)}</span>`;
       }
       dateRow.innerHTML = dateHtml;
       card.appendChild(dateRow);
@@ -473,7 +494,7 @@ const Components = {
           </p>
           <a href="${this.escapeHtml(folderUrl)}" target="_blank" rel="noopener noreferrer"
              class="btn-primary" style="display:inline-block; text-decoration:none; padding:10px 24px; color:#fff; background:var(--color-primary); border-radius:6px;">
-            📂 Google Driveで開く
+            <i data-lucide="${CONFIG.ICONS.folder}" style="width:16px;height:16px;color:#fff;vertical-align:middle;"></i> Google Driveで開く
           </a>
         </div>
       </div>
@@ -968,8 +989,8 @@ const Components = {
   // ========== ヘルパー: フェーズステータス取得 ==========
   getPhaseStatuses(lesson) {
     const phasesDef = [
-      { name: '前工程', emoji: '🔧', steps: CONFIG.前工程, process: '前工程' },
-      { name: '後工程', emoji: '🚀', steps: CONFIG.後工程, process: '後工程' }
+      { name: '前工程', icon: CONFIG.ICONS.前工程, steps: CONFIG.前工程, process: '前工程' },
+      { name: '後工程', icon: CONFIG.ICONS.後工程, steps: CONFIG.後工程, process: '後工程' }
     ];
 
     const phases = phasesDef.map(def => {
@@ -983,7 +1004,7 @@ const Components = {
       } else {
         status = 'active';
       }
-      return { name: def.name, emoji: def.emoji, status, checked, total, process: def.process };
+      return { name: def.name, icon: def.icon, status, checked, total, process: def.process };
     });
 
     // 現在ステップ情報
@@ -1014,14 +1035,14 @@ const Components = {
     phases.forEach((phase, index) => {
       const badge = document.createElement('span');
       badge.className = 'phase-badge phase-badge--' + phase.status;
-      badge.innerHTML = `<span class="phase-badge-emoji">${phase.emoji}</span><span class="phase-badge-name">${phase.name} ${phase.checked}/${phase.total}</span>`;
+      badge.innerHTML = `<span class="phase-badge-icon"><i data-lucide="${phase.icon}" style="width:14px;height:14px;"></i></span><span class="phase-badge-name">${phase.name} ${phase.checked}/${phase.total}</span>`;
       badge.title = `${phase.name}: ${phase.checked}/${phase.total} 完了`;
       strip.appendChild(badge);
 
       if (index < phases.length - 1) {
         const arrow = document.createElement('span');
         arrow.className = 'phase-badge-arrow';
-        arrow.textContent = '›';
+        arrow.innerHTML = `<i data-lucide="${CONFIG.ICONS.chevronRight}" style="width:14px;height:14px;color:var(--color-text-sub);"></i>`;
         strip.appendChild(arrow);
       }
     });
@@ -1032,12 +1053,12 @@ const Components = {
     if (currentStep) {
       const stepText = document.createElement('div');
       stepText.className = 'phase-current-step';
-      stepText.innerHTML = `📍 ${this.escapeHtml(currentStep.stepName)} を進行中（${currentStep.process} ${currentStep.done}/${currentStep.total}）`;
+      stepText.innerHTML = `${this.iconInline(CONFIG.ICONS.mapPin, '#7C3AED', 14)} ${this.escapeHtml(currentStep.stepName)} を進行中（${currentStep.process} ${currentStep.done}/${currentStep.total}）`;
       container.appendChild(stepText);
     } else if (lesson.進捗率.全体 === 100) {
       const stepText = document.createElement('div');
       stepText.className = 'phase-current-step phase-current-step--complete';
-      stepText.innerHTML = '✅ 全工程完了';
+      stepText.innerHTML = `${this.iconInline(CONFIG.ICONS.ok, '#10B981', 14)} 全工程完了`;
       container.appendChild(stepText);
     }
 
@@ -1048,7 +1069,7 @@ const Components = {
   createReviewSummaryReport(reviewData) {
     const section = document.createElement('div');
     section.className = 'review-section';
-    section.innerHTML = `<h2 class="review-section-title">📊 総論レポート</h2>`;
+    section.innerHTML = `<h2 class="review-section-title">${this.iconHtml(CONFIG.ICONS.report, '#7C3AED', 32)} 総論レポート</h2>`;
 
     const body = document.createElement('div');
     body.className = 'report-dashboard';
@@ -1115,11 +1136,11 @@ const Components = {
     strip.className = 'kpi-strip';
 
     const cards = [
-      { value: stats.total, label: '全教材', icon: '📚', color: '#7C3AED' },
-      { value: stats.released, label: 'リリース済み', icon: '✅', color: '#10B981' },
-      { value: stats.nearRelease, label: 'リリース間近', icon: '🔜', color: '#F59E0B' },
-      { value: stats.inProgress, label: '進行中', icon: '🔧', color: '#7C3AED' },
-      { value: stats.notStarted, label: '未着手', icon: '⏳', color: '#9CA3AF' }
+      { value: stats.total, label: '全教材', icon: CONFIG.ICONS.total, color: '#7C3AED' },
+      { value: stats.released, label: 'リリース済み', icon: CONFIG.ICONS.released, color: '#10B981' },
+      { value: stats.nearRelease, label: 'リリース間近', icon: CONFIG.ICONS.nearRelease, color: '#F59E0B' },
+      { value: stats.inProgress, label: '進行中', icon: CONFIG.ICONS.inProgress, color: '#7C3AED' },
+      { value: stats.notStarted, label: '未着手', icon: CONFIG.ICONS.notStarted, color: '#9CA3AF' }
     ];
 
     cards.forEach(c => {
@@ -1127,7 +1148,7 @@ const Components = {
       card.className = 'kpi-card' + (c.value === 0 ? ' kpi-card--zero' : '');
       card.style.borderLeftColor = c.color;
       card.innerHTML = `
-        <div class="kpi-icon" style="background:${this.hexToRgba(c.color, 0.1)}; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center;">${c.icon}</div>
+        <div class="kpi-icon">${this.iconHtml(c.icon, c.color, 44)}</div>
         <div class="kpi-value" style="color:${c.color}">${c.value}</div>
         <div class="kpi-label">${c.label}</div>
       `;
@@ -1172,7 +1193,7 @@ const Components = {
     // 右: ボトルネック工程
     const bottleneck = document.createElement('div');
     bottleneck.className = 'bottleneck-card';
-    bottleneck.innerHTML = `<div class="bottleneck-title">🔍 ボトルネック工程</div>`;
+    bottleneck.innerHTML = `<div class="bottleneck-title">${this.iconInline(CONFIG.ICONS.bottleneck, '#7C3AED', 16)} ボトルネック工程</div>`;
 
     const list = document.createElement('div');
     list.className = 'bottleneck-list';
@@ -1214,7 +1235,7 @@ const Components = {
       // 要対応（赤）
       const danger = document.createElement('div');
       danger.className = 'alert-bar alert-bar--danger';
-      let dangerHtml = '<span class="alert-bar-icon">🚨</span><span class="alert-bar-label">要対応:</span>';
+      let dangerHtml = '<span class="alert-bar-icon">' + this.iconInline(CONFIG.ICONS.danger, '#EF4444', 18) + '</span><span class="alert-bar-label">要対応:</span>';
       if (stats.worstDelays && stats.worstDelays.length > 0) {
         const items = stats.worstDelays.map(d =>
           `${this.escapeHtml(d.lesson.レッスン名)} ${d.daysOverdue}日超過 / 担当: ${this.escapeHtml(d.lesson.担当者名)}`
@@ -1232,7 +1253,7 @@ const Components = {
       const warning = document.createElement('div');
       warning.className = 'alert-bar alert-bar--warning';
       warning.innerHTML = `
-        <span class="alert-bar-icon">⏰</span>
+        <span class="alert-bar-icon">${this.iconInline(CONFIG.ICONS.warning, '#F59E0B', 18)}</span>
         <span class="alert-bar-label">注意:</span>
         <span class="alert-bar-content">${stats.warningCount}件の教材が納期間近（7日以内）</span>
       `;
@@ -1244,7 +1265,7 @@ const Components = {
       const ok = document.createElement('div');
       ok.className = 'alert-bar alert-bar--ok';
       ok.innerHTML = `
-        <span class="alert-bar-icon">✅</span>
+        <span class="alert-bar-icon">${this.iconInline(CONFIG.ICONS.ok, '#10B981', 18)}</span>
         <span class="alert-bar-label">問題なし:</span>
         <span class="alert-bar-content">スケジュールの遅延はありません</span>
       `;
@@ -1261,7 +1282,7 @@ const Components = {
 
     const title = document.createElement('h2');
     title.className = 'review-section-title';
-    title.textContent = '📋 教材ステータス一覧';
+    title.innerHTML = `${this.iconHtml(CONFIG.ICONS.statusList, '#7C3AED', 32)} 教材ステータス一覧`;
     section.appendChild(title);
 
     const grid = document.createElement('div');
@@ -1291,7 +1312,7 @@ const Components = {
     const header = document.createElement('div');
     header.className = 'status-column-header';
     header.innerHTML = `
-      <span class="status-icon">${config.icon}</span>
+      <span class="status-icon"><i data-lucide="${config.icon}" style="width:18px; height:18px; color:${config.color};"></i></span>
       <span class="status-title">${config.label}</span>
       <span class="status-count" style="background:${this.getGradient(config.color)}">${lessons.length}</span>
     `;
@@ -1337,7 +1358,7 @@ const Components = {
         <span class="status-progress">${lesson.進捗率.全体}%</span>
         ${delayBadge}
       </div>
-      ${deadlineText || releaseText ? `<div class="status-date">${releaseText ? '📅 リリース: ' + releaseText : '📅 納期: ' + deadlineText}</div>` : ''}
+      ${deadlineText || releaseText ? `<div class="status-date">${this.iconInline(CONFIG.ICONS.calendar, '#6B7280', 14)} ${releaseText ? 'リリース: ' + releaseText : '納期: ' + deadlineText}</div>` : ''}
     `;
     return item;
   },
@@ -1349,7 +1370,7 @@ const Components = {
 
     const title = document.createElement('h2');
     title.className = 'review-section-title';
-    title.textContent = '👥 担当者別稼働状況';
+    title.innerHTML = `${this.iconHtml(CONFIG.ICONS.assignees, '#7C3AED', 32)} 担当者別稼働状況`;
     section.appendChild(title);
 
     const grid = document.createElement('div');
@@ -1417,13 +1438,13 @@ const Components = {
 
     const title = document.createElement('h2');
     title.className = 'review-section-title';
-    title.textContent = '⚠️ 遅延アラート';
+    title.innerHTML = `${this.iconHtml(CONFIG.ICONS.delayAlert, '#EF4444', 32)} 遅延アラート`;
     section.appendChild(title);
 
     if (delayData.length === 0) {
       const noDelay = document.createElement('div');
       noDelay.className = 'no-delays';
-      noDelay.innerHTML = '✅ 現在遅延している教材はありません';
+      noDelay.innerHTML = this.iconInline(CONFIG.ICONS.ok, '#10B981', 18) + ' 現在遅延している教材はありません';
       section.appendChild(noDelay);
       return section;
     }
@@ -1449,7 +1470,7 @@ const Components = {
     if (item.isWarning) {
       card.innerHTML = `
         <div class="delay-card-header">
-          <span class="delay-card-icon">⏰</span>
+          <span class="delay-card-icon">${this.iconInline(CONFIG.ICONS.warning, '#F59E0B', 20)}</span>
           <span class="delay-card-title">${this.escapeHtml(item.lesson.レッスン名)}</span>
           <span class="delay-badge delay-warning">あと${Math.abs(item.daysOverdue)}日</span>
         </div>
@@ -1457,12 +1478,12 @@ const Components = {
           <span class="delay-card-meta">担当: ${this.escapeHtml(item.lesson.担当者名)} / 納期: ${deadlineText}</span>
           <span class="delay-card-progress">進捗 ${item.lesson.進捗率.全体}%</span>
         </div>
-        ${stuckStep ? `<div class="delay-stuck-step">📍 次の工程: ${this.escapeHtml(stuckStep)}</div>` : ''}
+        ${stuckStep ? `<div class="delay-stuck-step">${this.iconInline(CONFIG.ICONS.mapPin, '#F59E0B', 14)} 次の工程: ${this.escapeHtml(stuckStep)}</div>` : ''}
       `;
     } else {
       card.innerHTML = `
         <div class="delay-card-header">
-          <span class="delay-card-icon">🚨</span>
+          <span class="delay-card-icon">${this.iconInline(CONFIG.ICONS.danger, '#EF4444', 20)}</span>
           <span class="delay-card-title">${this.escapeHtml(item.lesson.レッスン名)}</span>
           <span class="delay-badge delay-overdue">${item.daysOverdue}日超過</span>
         </div>
@@ -1470,7 +1491,7 @@ const Components = {
           <span class="delay-card-meta">担当: ${this.escapeHtml(item.lesson.担当者名)} / 納期: ${deadlineText}</span>
           <span class="delay-card-progress">進捗 ${item.lesson.進捗率.全体}%</span>
         </div>
-        ${stuckStep ? `<div class="delay-stuck-step">📍 停滞箇所: ${this.escapeHtml(stuckStep)}</div>` : ''}
+        ${stuckStep ? `<div class="delay-stuck-step">${this.iconInline(CONFIG.ICONS.mapPin, '#EF4444', 14)} 停滞箇所: ${this.escapeHtml(stuckStep)}</div>` : ''}
       `;
     }
 
