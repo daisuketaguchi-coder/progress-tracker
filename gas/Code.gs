@@ -15,7 +15,7 @@ const SLACK_ENABLED = SLACK_WEBHOOK_URL !== 'YOUR_SLACK_WEBHOOK_URL';
 // ===== Google Drive設定 =====
 const PARENT_FOLDER_ID = '1NQFsKvPKD-l_GtpILBzy6ip9hqav_7qm';
 const TEMPLATE_FOLDER_ID = '12Qtt9HUAKLWAV4xSeJPSJ8fhscflbUz-';
-const TEMPLATE_SHEET_NAME = '原本（使わない）';
+const TEMPLATE_SHEET_NAME = '原本（新バージョン）';
 
 // Slack通知を送る列名（C列:キックオフ, E列:アウトライン作成, G列:スライド構成案作成, L列:台本チェック）
 const SLACK_NOTIFY_COLUMNS = ['キックオフ', 'アウトライン作成', 'スライド構成案作成', '台本チェック'];
@@ -461,6 +461,9 @@ function copyTemplateSheet(lessonName) {
   }
   var newSheet = templateSheet.copyTo(ss);
   newSheet.setName(lessonName);
+  // 一番右のタブに移動
+  ss.setActiveSheet(newSheet);
+  ss.moveActiveSheet(ss.getNumSheets());
   var sheetId = newSheet.getSheetId();
   return 'https://docs.google.com/spreadsheets/d/' + ss.getId() + '/edit#gid=' + sheetId;
 }
