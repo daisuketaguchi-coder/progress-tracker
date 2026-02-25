@@ -99,16 +99,16 @@ const CONFIG = {
   // 定例レビューダッシュボード設定
   REVIEW: {
     STATUS: {
-      RELEASED:     { key: 'released',    label: 'リリース済み', color: '#4CAF50', icon: '✅' },
-      NEAR_RELEASE: { key: 'nearRelease', label: 'リリース間近', color: '#FF9800', icon: '🔜' },
-      IN_PROGRESS:  { key: 'inProgress',  label: '進行中',       color: '#1976D2', icon: '🔧' },
-      NOT_STARTED:  { key: 'notStarted',  label: '未着手',       color: '#9E9E9E', icon: '⏳' }
+      RELEASED:     { key: 'released',    label: 'リリース済み', color: '#10B981', icon: '✅' },
+      NEAR_RELEASE: { key: 'nearRelease', label: 'リリース間近', color: '#F59E0B', icon: '🔜' },
+      IN_PROGRESS:  { key: 'inProgress',  label: '進行中',       color: '#7C3AED', icon: '🔧' },
+      NOT_STARTED:  { key: 'notStarted',  label: '未着手',       color: '#9CA3AF', icon: '⏳' }
     },
     DELAY_WARNING_DAYS: 7,
     WORKLOAD: {
-      LIGHT:  { max: 2,        label: '軽', color: '#4CAF50' },
-      MEDIUM: { max: 4,        label: '中', color: '#FF9800' },
-      HEAVY:  { max: Infinity, label: '高', color: '#E53935' }
+      LIGHT:  { max: 2,        label: '軽', color: '#10B981' },
+      MEDIUM: { max: 4,        label: '中', color: '#F59E0B' },
+      HEAVY:  { max: Infinity, label: '高', color: '#EF4444' }
     }
   },
 
@@ -124,17 +124,20 @@ const CONFIG = {
   },
 
   COLORS: {
-    前工程: '#4CAF50',
-    前工程Light: '#E8F5E9',
-    後工程: '#FF9800',
-    後工程Light: '#FFF3E0',
-    primary: '#1976D2',
-    primaryLight: '#E3F2FD',
-    danger: '#E53935',
-    bg: '#F5F5F5',
+    前工程: '#10B981',
+    前工程Light: '#ECFDF5',
+    後工程: '#F59E0B',
+    後工程Light: '#FFFBEB',
+    primary: '#7C3AED',
+    primaryLight: '#F5F3FF',
+    primaryDark: '#6D28D9',
+    danger: '#EF4444',
+    success: '#10B981',
+    warning: '#F59E0B',
+    bg: '#F8F7FC',
     card: '#FFFFFF',
-    text: '#333333',
-    textSub: '#757575',
-    border: '#E0E0E0'
+    text: '#1E1B4B',
+    textSub: '#6B7280',
+    border: '#E5E7EB'
   }
 };

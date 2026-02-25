@@ -1094,11 +1094,11 @@ const Components = {
     strip.className = 'kpi-strip';
 
     const cards = [
-      { value: stats.total, label: '全教材', icon: '📚', color: '#1976D2' },
-      { value: stats.released, label: 'リリース済み', icon: '✅', color: '#4CAF50' },
-      { value: stats.nearRelease, label: 'リリース間近', icon: '🔜', color: '#FF9800' },
-      { value: stats.inProgress, label: '進行中', icon: '🔧', color: '#1976D2' },
-      { value: stats.notStarted, label: '未着手', icon: '⏳', color: '#9E9E9E' }
+      { value: stats.total, label: '全教材', icon: '📚', color: '#7C3AED' },
+      { value: stats.released, label: 'リリース済み', icon: '✅', color: '#10B981' },
+      { value: stats.nearRelease, label: 'リリース間近', icon: '🔜', color: '#F59E0B' },
+      { value: stats.inProgress, label: '進行中', icon: '🔧', color: '#7C3AED' },
+      { value: stats.notStarted, label: '未着手', icon: '⏳', color: '#9CA3AF' }
     ];
 
     cards.forEach(c => {
@@ -1126,9 +1126,9 @@ const Components = {
     gaugeGroup.className = 'gauge-group';
 
     const gauges = [
-      { label: '全体', percent: stats.avgProgress, color: '#1976D2' },
-      { label: '前工程', percent: stats.avgPreProgress, color: '#4CAF50' },
-      { label: '後工程', percent: stats.avgPostProgress, color: '#FF9800' }
+      { label: '全体', percent: stats.avgProgress, color: '#7C3AED' },
+      { label: '前工程', percent: stats.avgPreProgress, color: '#10B981' },
+      { label: '後工程', percent: stats.avgPostProgress, color: '#F59E0B' }
     ];
 
     gauges.forEach(g => {
@@ -1137,7 +1137,7 @@ const Components = {
       // conic-gradient で円グラフ風リング
       const deg = (g.percent / 100) * 360;
       gauge.innerHTML = `
-        <div class="gauge-ring" style="background: conic-gradient(${g.color} 0deg, ${g.color} ${deg}deg, #E0E0E0 ${deg}deg, #E0E0E0 360deg);">
+        <div class="gauge-ring" style="background: conic-gradient(${g.color} 0deg, ${g.color} ${deg}deg, #E5E7EB ${deg}deg, #E5E7EB 360deg);">
           <div class="gauge-center">${g.percent}%</div>
         </div>
         <div class="gauge-label">${g.label}</div>
@@ -1159,7 +1159,7 @@ const Components = {
       const maxCount = stats.bottleneckSteps[0].count;
       stats.bottleneckSteps.forEach(item => {
         const barPercent = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
-        const phaseColor = item.phase === '前工程' ? '#4CAF50' : '#FF9800';
+        const phaseColor = item.phase === '前工程' ? '#10B981' : '#F59E0B';
         const entry = document.createElement('div');
         entry.className = 'bottleneck-entry';
         entry.innerHTML = `
