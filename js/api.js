@@ -65,5 +65,14 @@ const API = {
       納期: formData.納期 || '',
       リリース日: formData.リリース日 || ''
     });
+  },
+
+  async updateField(rowIndex, columnName, value) {
+    return this.postAction({
+      action: 'updateField',
+      rowIndex,
+      columnName,
+      value
+    });
   }
 };

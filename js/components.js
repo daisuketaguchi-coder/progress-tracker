@@ -158,8 +158,124 @@ const Components = {
     return section;
   },
 
+  // ========== インライン編集フィールド ==========
+  createEditableField(text, tagName, className, onSave) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'editable-field';
+
+    // 表示モード
+    const display = document.createElement('div');
+    display.className = 'editable-display';
+
+    const textEl = document.createElement(tagName);
+    textEl.className = className;
+    textEl.textContent = text;
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-edit-field';
+    editBtn.innerHTML = '&#9998;';
+    editBtn.title = '編集';
+
+    display.appendChild(textEl);
+    display.appendChild(editBtn);
+
+    // 編集モード
+    const editor = document.createElement('div');
+    editor.className = 'editable-editor';
+    editor.style.display = 'none';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'editable-input';
+    input.value = text;
+    input.maxLength = 100;
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'btn-edit-confirm';
+    confirmBtn.innerHTML = '&#10003;';
+    confirmBtn.title = '確定';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn-edit-cancel';
+    cancelBtn.innerHTML = '&#10005;';
+    cancelBtn.title = 'キャンセル';
+
+    const actions = document.createElement('div');
+    actions.className = 'edit-actions';
+    actions.appendChild(confirmBtn);
+    actions.appendChild(cancelBtn);
+
+    editor.appendChild(input);
+    editor.appendChild(actions);
+
+    wrapper.appendChild(display);
+    wrapper.appendChild(editor);
+
+    // 編集モード開始
+    const startEdit = () => {
+      display.style.display = 'none';
+      editor.style.display = 'flex';
+      input.value = textEl.textContent;
+      input.focus();
+      input.select();
+    };
+
+    // 編集モード終了
+    const cancelEdit = () => {
+      editor.style.display = 'none';
+      display.style.display = 'flex';
+    };
+
+    // 保存
+    const saveEdit = async () => {
+      const newValue = input.value.trim();
+      if (!newValue) {
+        input.classList.add('editable-input--error');
+        input.focus();
+        return;
+      }
+      if (newValue === textEl.textContent) {
+        cancelEdit();
+        return;
+      }
+      // 保存中UI
+      input.disabled = true;
+      confirmBtn.disabled = true;
+      cancelBtn.disabled = true;
+      confirmBtn.innerHTML = '...';
+
+      try {
+        await onSave(newValue);
+        textEl.textContent = newValue;
+        cancelEdit();
+      } catch (err) {
+        // 失敗時は編集モードのまま
+      } finally {
+        input.disabled = false;
+        confirmBtn.disabled = false;
+        cancelBtn.disabled = false;
+        confirmBtn.innerHTML = '&#10003;';
+      }
+    };
+
+    editBtn.addEventListener('click', (e) => { e.stopPropagation(); startEdit(); });
+    confirmBtn.addEventListener('click', (e) => { e.stopPropagation(); saveEdit(); });
+    cancelBtn.addEventListener('click', (e) => { e.stopPropagation(); cancelEdit(); });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+      if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
+    });
+
+    input.addEventListener('input', () => {
+      input.classList.remove('editable-input--error');
+    });
+
+    return wrapper;
+  },
+
   // ========== レッスンカード ==========
-  createLessonCard(lesson, onCheck, onDelete, onReviewRequest) {
+  createLessonCard(lesson, onCheck, onDelete, onReviewRequest, onEditField) {
     const card = document.createElement('div');
     card.className = 'lesson-card';
     card.dataset.rowIndex = lesson.rowIndex;
@@ -167,17 +283,38 @@ const Components = {
     // ヘッダー
     const cardHeader = document.createElement('div');
     cardHeader.className = 'card-header';
-    cardHeader.innerHTML = `
-      <div class="card-info">
-        <span class="card-assignee">${this.escapeHtml(lesson.担当者名)}</span>
-        <h3 class="card-lesson-name">${this.escapeHtml(lesson.レッスン名)}</h3>
-      </div>
-      <button class="btn-delete" title="削除">&#10005;</button>
-    `;
 
-    cardHeader.querySelector('.btn-delete').addEventListener('click', () => {
+    const cardInfo = document.createElement('div');
+    cardInfo.className = 'card-info';
+
+    // 担当者名（編集可能）
+    const assigneeField = this.createEditableField(
+      lesson.担当者名 || '',
+      'span',
+      'card-assignee',
+      (newValue) => onEditField(lesson.rowIndex, '担当者名', newValue)
+    );
+    cardInfo.appendChild(assigneeField);
+
+    // レッスン名（編集可能）
+    const lessonNameField = this.createEditableField(
+      lesson.レッスン名 || '',
+      'h3',
+      'card-lesson-name',
+      (newValue) => onEditField(lesson.rowIndex, 'レッスン名', newValue)
+    );
+    cardInfo.appendChild(lessonNameField);
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn-delete';
+    deleteBtn.title = '削除';
+    deleteBtn.innerHTML = '&#10005;';
+    deleteBtn.addEventListener('click', () => {
       onDelete(lesson.rowIndex, lesson.レッスン名);
     });
+
+    cardHeader.appendChild(cardInfo);
+    cardHeader.appendChild(deleteBtn);
 
     card.appendChild(cardHeader);
     card.appendChild(this.createPhaseBadgeRow(lesson));
@@ -355,7 +492,7 @@ const Components = {
     const header = document.createElement('div');
     header.className = 'entry-form-header';
     header.innerHTML = `
-      <h2>レッスンデータ入力</h2>
+      <h2>新規レッスン登録</h2>
       <p class="entry-form-description">
         スプレッドシートに新しいレッスンデータを登録します。
       </p>

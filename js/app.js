@@ -183,7 +183,8 @@ const App = {
         lesson,
         (rowIndex, columnName, value) => this.onCheckboxChange(rowIndex, columnName, value),
         (rowIndex, lessonName) => this.onDeleteLesson(rowIndex, lessonName),
-        (rowIndex, stepName) => this.onReviewRequest(rowIndex, stepName, lesson.レッスン名)
+        (rowIndex, stepName) => this.onReviewRequest(rowIndex, stepName, lesson.レッスン名),
+        (rowIndex, columnName, newValue) => this.onEditField(rowIndex, columnName, newValue)
       );
       grid.appendChild(card);
     });
@@ -280,6 +281,32 @@ const App = {
       Components.showToast('通信エラー: 削除に失敗しました', 'error');
     } finally {
       Components.showLoader(false);
+    }
+  },
+
+  // ===== フィールド編集（担当者名・レッスン名） =====
+  async onEditField(rowIndex, columnName, newValue) {
+    try {
+      const result = await API.updateField(rowIndex, columnName, newValue);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      // ローカルデータも更新
+      const lesson = this.state.lessons.find(l => l.rowIndex === rowIndex);
+      if (lesson) {
+        lesson[columnName] = newValue;
+      }
+      Components.showToast(`${columnName}を「${newValue}」に変更しました`, 'success');
+      // 担当者名変更時はフィルター選択肢も更新
+      if (columnName === '担当者名') {
+        this.updateFilterOptions();
+      }
+      // 工程別ビューとサマリーも再描画
+      this.renderStepProgressView();
+      this.renderSummary();
+    } catch (err) {
+      Components.showToast(`${columnName}の変更に失敗しました`, 'error');
+      throw err;
     }
   },
 

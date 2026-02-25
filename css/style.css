@@ -256,6 +256,117 @@ body {
   word-break: break-word;
 }
 
+/* ----- インライン編集フィールド ----- */
+.editable-field {
+  min-width: 0;
+}
+
+.editable-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.editable-display .card-assignee {
+  cursor: default;
+}
+
+.btn-edit-field {
+  background: none;
+  border: none;
+  color: var(--color-text-sub);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.15s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.editable-field:hover .btn-edit-field {
+  opacity: 0.7;
+}
+
+.btn-edit-field:hover {
+  opacity: 1 !important;
+  background: rgba(0,0,0,0.06);
+}
+
+.editable-editor {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.editable-input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 2px solid var(--color-primary);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-family: var(--font);
+  outline: none;
+  background: #fff;
+}
+
+.editable-input--error {
+  border-color: var(--color-danger);
+  animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.edit-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.btn-edit-confirm,
+.btn-edit-cancel {
+  background: none;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-edit-confirm {
+  color: var(--color-pre);
+  border-color: var(--color-pre);
+}
+
+.btn-edit-confirm:hover {
+  background: var(--color-pre);
+  color: #fff;
+}
+
+.btn-edit-cancel {
+  color: var(--color-text-sub);
+}
+
+.btn-edit-cancel:hover {
+  background: #FFEBEE;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.btn-edit-confirm:disabled,
+.btn-edit-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .btn-delete {
   background: none;
   border: none;

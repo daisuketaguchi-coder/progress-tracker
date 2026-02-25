@@ -108,6 +108,9 @@ function doPost(e) {
       case 'addLessonWithData':
         result = addLessonWithData(body);
         break;
+      case 'updateField':
+        result = updateField(body.rowIndex, body.columnName, body.value);
+        break;
       default:
         result = { error: '不明なアクション: ' + action };
     }
@@ -431,4 +434,23 @@ function copyFolderContents_(source, destination) {
     var newSub = destination.createFolder(folder.getName());
     copyFolderContents_(folder, newSub);
   }
+}
+
+// ===== フィールド更新（担当者名・レッスン名） =====
+const EDITABLE_COLUMNS = ['担当者名', 'レッスン名'];
+
+function updateField(rowIndex, columnName, value) {
+  if (!EDITABLE_COLUMNS.includes(columnName)) {
+    return { error: '編集不可の列: ' + columnName };
+  }
+  if (!value || (typeof value === 'string' && value.trim() === '')) {
+    return { error: columnName + 'が空です' };
+  }
+  var colNum = COLUMN_MAP[columnName];
+  if (!colNum) {
+    return { error: '不明な列名: ' + columnName };
+  }
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  sheet.getRange(rowIndex, colNum).setValue(value.trim());
+  return { success: true, rowIndex: rowIndex, columnName: columnName, value: value.trim() };
 }
