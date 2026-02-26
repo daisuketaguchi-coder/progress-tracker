@@ -536,6 +536,14 @@ const App = {
       Components.showToast('担当者名とレッスン名は必須です', 'error');
       return;
     }
+    if (!formData.カテゴリ名) {
+      Components.showToast('カテゴリ名は必須です', 'error');
+      return;
+    }
+    if (!formData.コース名) {
+      Components.showToast('コース名は必須です', 'error');
+      return;
+    }
 
     Components.showLoader(true);
     try {

@@ -51,6 +51,32 @@ const CONFIG = {
   // データ入力フォームのフィールド定義（拡張可能）
   ENTRY_FORM_FIELDS: [
     {
+      id: 'category',
+      label: 'カテゴリ名',
+      type: 'selectWithOther',
+      required: true,
+      columnName: 'カテゴリ名',
+      options: [
+        { value: '', label: '選択してください' },
+        { value: 'デビュー必須基礎', label: 'デビュー必須基礎' },
+        { value: 'ビジネス構築＆副業', label: 'ビジネス構築＆副業' },
+        { value: '業務改善', label: '業務改善' },
+        { value: 'AIツール', label: 'AIツール' },
+        { value: '速報ウェビナー', label: '速報ウェビナー' },
+        { value: '__other__', label: 'その他（自由記述）' }
+      ],
+      otherPlaceholder: 'カテゴリ名を入力してください'
+    },
+    {
+      id: 'courseName',
+      label: 'コース名',
+      type: 'text',
+      required: true,
+      placeholder: '例: 基礎コース A',
+      maxlength: 200,
+      columnName: 'コース名'
+    },
+    {
       id: 'assignee',
       label: '担当者名',
       type: 'text',

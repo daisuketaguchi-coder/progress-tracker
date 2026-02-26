@@ -60,6 +60,8 @@ const API = {
       action: 'addLessonWithData',
       担当者名: formData.担当者名,
       レッスン名: formData.レッスン名,
+      カテゴリ名: formData.カテゴリ名 || '',
+      コース名: formData.コース名 || '',
       initialSteps: formData.initialSteps || {},
       createDriveFolder: formData.createDriveFolder !== false,
       開始日: formData.開始日 || '',

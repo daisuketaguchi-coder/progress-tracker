@@ -49,7 +49,9 @@ const COLUMN_MAP = {
   '告知終了': 26,
   '開始日': 27,
   '納期': 28,
-  'リリース日': 29
+  'リリース日': 29,
+  'カテゴリ名': 30,
+  'コース名': 31
 };
 
 const PRE_PROCESS_KEYS = [
@@ -138,7 +140,7 @@ function getAllLessons() {
   }
 
   const numRows = lastRow - DATA_START_ROW + 1;
-  const data = sheet.getRange(DATA_START_ROW, 1, numRows, 29).getValues();
+  const data = sheet.getRange(DATA_START_ROW, 1, numRows, 31).getValues();
 
   const lessons = [];
   for (let i = 0; i < data.length; i++) {
@@ -182,7 +184,9 @@ function getAllLessons() {
       },
       開始日: (startDate instanceof Date) ? startDate.toISOString() : (startDate || ''),
       納期: (deadline instanceof Date) ? deadline.toISOString() : (deadline || ''),
-      リリース日: (releaseDate instanceof Date) ? releaseDate.toISOString() : (releaseDate || '')
+      リリース日: (releaseDate instanceof Date) ? releaseDate.toISOString() : (releaseDate || ''),
+      カテゴリ名: row[COLUMN_MAP['カテゴリ名'] - 1] || '',
+      コース名: row[COLUMN_MAP['コース名'] - 1] || ''
     });
   }
 
@@ -357,6 +361,12 @@ function addLessonWithData(data) {
   if (!data.担当者名 || !data.レッスン名) {
     return { error: '担当者名とレッスン名は必須です' };
   }
+  if (!data.カテゴリ名) {
+    return { error: 'カテゴリ名は必須です' };
+  }
+  if (!data.コース名) {
+    return { error: 'コース名は必須です' };
+  }
 
   const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
   const newRow = getNextDataRow(sheet);
@@ -385,6 +395,14 @@ function addLessonWithData(data) {
     if (data[colName]) {
       sheet.getRange(newRow, COLUMN_MAP[colName]).setValue(new Date(data[colName]));
     }
+  }
+
+  // カテゴリ名・コース名を設定
+  if (data.カテゴリ名) {
+    sheet.getRange(newRow, COLUMN_MAP['カテゴリ名']).setValue(data.カテゴリ名);
+  }
+  if (data.コース名) {
+    sheet.getRange(newRow, COLUMN_MAP['コース名']).setValue(data.コース名);
   }
 
   // Google Driveにテンプレートフォルダをコピー（ベストエフォート）
@@ -443,7 +461,7 @@ function copyFolderContents_(source, destination) {
 }
 
 // ===== フィールド更新（担当者名・レッスン名） =====
-const EDITABLE_COLUMNS = ['担当者名', 'レッスン名'];
+const EDITABLE_COLUMNS = ['担当者名', 'レッスン名', 'カテゴリ名', 'コース名'];
 
 function updateField(rowIndex, columnName, value) {
   if (!EDITABLE_COLUMNS.includes(columnName)) {

@@ -346,6 +346,28 @@ const Components = {
     );
     cardInfo.appendChild(lessonNameField);
 
+    // カテゴリ名・コース名 メタラベル（編集可能）
+    const metaLabels = document.createElement('div');
+    metaLabels.className = 'card-meta-labels';
+
+    const categoryField = this.createEditableField(
+      lesson.カテゴリ名 || '（未設定）',
+      'span',
+      'card-category-badge',
+      (newValue) => onEditField(lesson.rowIndex, 'カテゴリ名', newValue)
+    );
+    metaLabels.appendChild(categoryField);
+
+    const courseField = this.createEditableField(
+      lesson.コース名 || '（未設定）',
+      'span',
+      'card-course-badge',
+      (newValue) => onEditField(lesson.rowIndex, 'コース名', newValue)
+    );
+    metaLabels.appendChild(courseField);
+
+    cardInfo.appendChild(metaLabels);
+
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'btn-delete';
     deleteBtn.title = '削除';
@@ -675,6 +697,47 @@ const Components = {
           input.appendChild(option);
         });
         break;
+      case 'selectWithOther': {
+        const selectWrapper = document.createElement('div');
+        selectWrapper.className = 'select-with-other';
+
+        input = document.createElement('select');
+        (config.options || []).forEach(opt => {
+          const option = document.createElement('option');
+          option.value = opt.value;
+          option.textContent = opt.label;
+          input.appendChild(option);
+        });
+
+        const otherInput = document.createElement('input');
+        otherInput.type = 'text';
+        otherInput.className = 'select-other-input';
+        otherInput.placeholder = config.otherPlaceholder || '入力してください';
+        otherInput.style.display = 'none';
+        otherInput.dataset.otherFor = config.id;
+        if (config.maxlength) otherInput.maxLength = config.maxlength;
+
+        input.addEventListener('change', () => {
+          if (input.value === '__other__') {
+            otherInput.style.display = '';
+            otherInput.required = config.required || false;
+            otherInput.focus();
+          } else {
+            otherInput.style.display = 'none';
+            otherInput.required = false;
+            otherInput.value = '';
+          }
+        });
+
+        input.id = 'entry_' + config.id;
+        input.name = config.id;
+        if (config.required) input.required = true;
+
+        selectWrapper.appendChild(input);
+        selectWrapper.appendChild(otherInput);
+        group.appendChild(selectWrapper);
+        return group;
+      }
       case 'textarea':
         input = document.createElement('textarea');
         input.rows = config.rows || 3;
@@ -1557,7 +1620,12 @@ const Components = {
     CONFIG.ENTRY_FORM_FIELDS.forEach(field => {
       const input = form.querySelector('#entry_' + field.id);
       if (input && field.columnName) {
-        data[field.columnName] = input.value.trim();
+        if (field.type === 'selectWithOther' && input.value === '__other__') {
+          const otherInput = form.querySelector('input[data-other-for="' + field.id + '"]');
+          data[field.columnName] = otherInput ? otherInput.value.trim() : '';
+        } else {
+          data[field.columnName] = input.value.trim();
+        }
       }
     });
 
