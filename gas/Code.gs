@@ -36,25 +36,27 @@ const COLUMN_MAP = {
   '台本マネージャーCK': 13,
   'アバター音声入力依頼': 14,
   'アバター音声入力完了': 15,
-  '動画編集依頼': 16,
-  '動画初稿チェック': 17,
-  '動画校了確認': 18,
-  'サムネイル依頼': 19,
-  'サムネイル確認': 20,
-  'サムネイル校了': 21,
-  '告知依頼': 22,
-  '格納依頼': 23,
-  '格納チェック': 24,
-  '告知終了': 25,
-  '開始日': 26,
-  '納期': 27,
-  'リリース日': 28
+  '撮影ワークシート記入': 16,
+  '動画編集依頼': 17,
+  '動画初稿チェック': 18,
+  '動画校了確認': 19,
+  'サムネイル依頼': 20,
+  'サムネイル確認': 21,
+  'サムネイル校了': 22,
+  '告知依頼': 23,
+  '格納依頼': 24,
+  '格納チェック': 25,
+  '告知終了': 26,
+  '開始日': 27,
+  '納期': 28,
+  'リリース日': 29
 };
 
 const PRE_PROCESS_KEYS = [
   'キックオフ', 'リサーチ', 'アウトライン作成', 'アウトラインマネージャーCK',
   'スライド構成案作成', 'スライド構成案マネージャーCK', 'スライド作成依頼', 'スライド完了チェック',
-  '台本作成', '台本チェック', '台本マネージャーCK', 'アバター音声入力依頼', 'アバター音声入力完了'
+  '台本作成', '台本チェック', '台本マネージャーCK', 'アバター音声入力依頼', 'アバター音声入力完了',
+  '撮影ワークシート記入'
 ];
 
 const POST_PROCESS_KEYS = [
@@ -136,7 +138,7 @@ function getAllLessons() {
   }
 
   const numRows = lastRow - DATA_START_ROW + 1;
-  const data = sheet.getRange(DATA_START_ROW, 1, numRows, 28).getValues();
+  const data = sheet.getRange(DATA_START_ROW, 1, numRows, 29).getValues();
 
   const lessons = [];
   for (let i = 0; i < data.length; i++) {
@@ -342,8 +344,8 @@ function addLesson(担当者名, レッスン名) {
   sheet.getRange(newRow, 1).setValue(担当者名);
   sheet.getRange(newRow, 2).setValue(レッスン名);
 
-  // C〜Y列(3〜25)にチェックボックスを挿入
-  for (let col = 3; col <= 25; col++) {
+  // C〜Z列(3〜26)にチェックボックスを挿入
+  for (let col = 3; col <= 26; col++) {
     sheet.getRange(newRow, col).insertCheckboxes();
   }
 
@@ -363,8 +365,8 @@ function addLessonWithData(data) {
   sheet.getRange(newRow, 1).setValue(data.担当者名);
   sheet.getRange(newRow, 2).setValue(data.レッスン名);
 
-  // C〜Y列(3〜25)にチェックボックスを挿入
-  for (var col = 3; col <= 25; col++) {
+  // C〜Z列(3〜26)にチェックボックスを挿入
+  for (var col = 3; col <= 26; col++) {
     sheet.getRange(newRow, col).insertCheckboxes();
   }
 
