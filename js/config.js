@@ -48,6 +48,11 @@ const CONFIG = {
     '台本マネージャーCK'
   ],
 
+  // 工程に紐づく外部リンク
+  STEP_LINKS: {
+    '撮影ワークシート記入': 'https://docs.google.com/spreadsheets/d/1UoSunbhvRT1NwyOZ5Mvipj-pJfKV2XftYg35wTY8xWU/edit?gid=801435522#gid=801435522'
+  },
+
   // データ入力フォームのフィールド定義（拡張可能）
   ENTRY_FORM_FIELDS: [
     {

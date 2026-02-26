@@ -157,6 +157,22 @@ const Components = {
       item.appendChild(btn);
     }
 
+    // 外部リンクボタン（STEP_LINKSに定義がある工程のみ）
+    const stepUrl = CONFIG.STEP_LINKS && CONFIG.STEP_LINKS[label];
+    if (stepUrl) {
+      const link = document.createElement('a');
+      link.href = stepUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.className = 'btn-step-link';
+      link.title = 'シートを開く';
+      link.innerHTML = '<i data-lucide="external-link" style="width:14px;height:14px;"></i>';
+      link.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+      item.appendChild(link);
+    }
+
     return item;
   },
 

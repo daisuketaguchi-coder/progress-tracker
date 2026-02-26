@@ -818,6 +818,28 @@ body {
   cursor: not-allowed;
 }
 
+/* ----- 工程リンクボタン ----- */
+.btn-step-link {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: #7C3AED;
+  background: rgba(124, 58, 237, 0.1);
+  border-radius: 50%;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s;
+  pointer-events: auto;
+}
+
+.btn-step-link:hover {
+  background: rgba(124, 58, 237, 0.25);
+  color: #6D28D9;
+}
+
 /* ----- モーダル ----- */
 .modal-overlay {
   position: fixed;
