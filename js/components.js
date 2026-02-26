@@ -573,6 +573,34 @@ const Components = {
     });
     form.appendChild(basicSection);
 
+    // --- Driveフォルダ作成オプション ---
+    const driveSection = document.createElement('div');
+    driveSection.className = 'entry-form-section';
+
+    const driveToggle = document.createElement('label');
+    driveToggle.className = 'drive-folder-toggle';
+
+    const driveCheckbox = document.createElement('input');
+    driveCheckbox.type = 'checkbox';
+    driveCheckbox.name = 'createDriveFolder';
+    driveCheckbox.id = 'entry_createDriveFolder';
+    driveCheckbox.checked = true;
+    driveCheckbox.defaultChecked = true;
+
+    const driveLabel = document.createElement('span');
+    driveLabel.className = 'drive-folder-toggle-label';
+    driveLabel.textContent = 'Google Driveにテンプレートフォルダを作成する';
+
+    const driveHint = document.createElement('span');
+    driveHint.className = 'drive-folder-toggle-hint';
+    driveHint.textContent = '既にフォルダがある場合はOFFにしてください';
+
+    driveToggle.appendChild(driveCheckbox);
+    driveToggle.appendChild(driveLabel);
+    driveSection.appendChild(driveToggle);
+    driveSection.appendChild(driveHint);
+    form.appendChild(driveSection);
+
     // --- 初期工程ステータス（任意） ---
     if (CONFIG.ENTRY_FORM_SHOW_INITIAL_STEPS) {
       const stepsSection = document.createElement('div');
@@ -1532,6 +1560,10 @@ const Components = {
         data[field.columnName] = input.value.trim();
       }
     });
+
+    // Driveフォルダ作成フラグ収集
+    const driveCb = form.querySelector('#entry_createDriveFolder');
+    data.createDriveFolder = driveCb ? driveCb.checked : true;
 
     // 工程チェックボックス収集
     [...CONFIG.前工程, ...CONFIG.後工程].forEach(step => {

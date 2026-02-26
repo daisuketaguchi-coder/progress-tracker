@@ -61,6 +61,7 @@ const API = {
       担当者名: formData.担当者名,
       レッスン名: formData.レッスン名,
       initialSteps: formData.initialSteps || {},
+      createDriveFolder: formData.createDriveFolder !== false,
       開始日: formData.開始日 || '',
       納期: formData.納期 || '',
       リリース日: formData.リリース日 || ''

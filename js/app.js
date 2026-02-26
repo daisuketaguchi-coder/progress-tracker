@@ -550,6 +550,8 @@ const App = {
         Components.showCreatedLinksModal(formData.レッスン名, result.folderUrl, result.sheetUrl);
       } else if (result.folderError || result.sheetError) {
         Components.showToast('レッスン登録済み（一部リソース作成失敗）', 'info');
+      } else if (formData.createDriveFolder === false) {
+        Components.showToast('レッスンを登録しました（フォルダ作成スキップ）', 'success');
       } else {
         Components.showToast('レッスンを登録しました', 'success');
       }

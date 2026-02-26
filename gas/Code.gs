@@ -388,10 +388,13 @@ function addLessonWithData(data) {
   // Google Driveにテンプレートフォルダをコピー（ベストエフォート）
   var folderUrl = null;
   var folderError = null;
-  try {
-    folderUrl = copyTemplateFolder(data.レッスン名);
-  } catch (driveErr) {
-    folderError = driveErr.message;
+  var shouldCreateFolder = (data.createDriveFolder !== false); // 未指定時はtrue（後方互換）
+  if (shouldCreateFolder) {
+    try {
+      folderUrl = copyTemplateFolder(data.レッスン名);
+    } catch (driveErr) {
+      folderError = driveErr.message;
+    }
   }
 
   var result = { success: true, rowIndex: newRow };
