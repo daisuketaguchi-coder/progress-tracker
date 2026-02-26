@@ -1380,6 +1380,21 @@ body {
     justify-content: center;
   }
 
+  /* タブナビ: 横スクロール可能に */
+  .header-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+  }
+  .header-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .tab-btn {
+    padding: 8px 16px;
+    font-size: 0.8rem;
+  }
+
   .app-main {
     padding: 12px;
   }
@@ -1389,21 +1404,56 @@ body {
     gap: 14px;
   }
 
-  .card-dates {
-    flex-direction: column;
-    gap: 4px;
-  }
-
+  /* サマリー統計カード: 余白縮小 */
   .summary-stat-row {
     gap: 8px;
   }
-
+  .stat-card {
+    padding: 18px 16px;
+  }
   .stat-number {
     font-size: 1.5rem;
   }
+  .stat-label {
+    font-size: 0.72rem;
+  }
 
+  /* レッスンカード内の余白縮小 */
+  .card-header {
+    padding: 14px 14px 10px;
+  }
+  .card-progress {
+    padding: 10px 14px;
+  }
+  .card-dates {
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 14px;
+  }
+  .card-timeline {
+    padding: 6px 14px 10px;
+  }
+  .process-header {
+    padding: 10px 14px;
+  }
   .process-body {
     grid-template-columns: 1fr;
+    padding: 8px 14px 10px;
+  }
+
+  /* 入力フォーム余白縮小 */
+  .entry-form-header {
+    padding: 20px 18px 14px;
+  }
+  .entry-form {
+    padding: 18px;
+  }
+
+  /* メタラベルバッジ: コンパクトに */
+  .card-category-badge,
+  .card-course-badge {
+    font-size: 0.65rem;
+    padding: 2px 8px;
   }
 
   .step-checkbox-grid {
@@ -1430,6 +1480,84 @@ body {
   .header-controls .btn-primary {
     width: 100%;
     text-align: center;
+  }
+
+  /* タブナビ: さらにコンパクト */
+  .tab-btn {
+    padding: 7px 12px;
+    font-size: 0.75rem;
+  }
+
+  /* サマリー統計: 3列→1列に変更 */
+  .summary-stat-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .stat-card {
+    padding: 14px 16px;
+  }
+  .stat-card-header {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  .stat-number {
+    font-size: 1.8rem;
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  .stat-label {
+    margin-top: 0;
+  }
+
+  /* レッスンカードさらにコンパクト */
+  .card-header {
+    padding: 12px 12px 8px;
+  }
+  .card-progress {
+    padding: 8px 12px;
+  }
+  .card-dates {
+    padding: 6px 12px;
+  }
+  .process-header {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+  .process-body {
+    padding: 6px 10px 8px;
+  }
+  .checkbox-item {
+    min-height: 40px;
+    padding: 6px 10px;
+    gap: 8px;
+  }
+  .checkbox-label-text {
+    font-size: 0.78rem;
+  }
+
+  /* 入力フォーム余白さらに縮小 */
+  .entry-form-header {
+    padding: 16px 14px 12px;
+  }
+  .entry-form {
+    padding: 14px;
+  }
+  .entry-form-header h2 {
+    font-size: 1.05rem;
+  }
+
+  /* メタラベル */
+  .card-meta-labels {
+    gap: 4px;
+  }
+
+  /* 遅延バナー */
+  .card-delay-banner {
+    flex-wrap: wrap;
+    font-size: 0.75rem;
+    padding: 6px 12px;
   }
 }
 
