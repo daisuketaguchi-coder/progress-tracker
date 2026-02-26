@@ -495,7 +495,7 @@ const Components = {
       linksHtml += `
         <a href="${this.escapeHtml(sheetUrl)}" target="_blank" rel="noopener noreferrer"
            class="btn-primary" style="display:inline-block; text-decoration:none; padding:10px 24px; color:#fff; background:${CONFIG.COLORS.前工程}; border-radius:6px;">
-          <i data-lucide="table" style="width:16px;height:16px;color:#fff;vertical-align:middle;"></i> 登録レッスンを開く
+          <i data-lucide="table" style="width:16px;height:16px;color:#fff;vertical-align:middle;"></i> スプレッドシートで開く
         </a>`;
     }
 
