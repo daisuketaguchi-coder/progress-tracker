@@ -1179,11 +1179,13 @@ const Components = {
       // 進捗セル
       const tdProg = document.createElement('td');
       tdProg.className = 'step-matrix-td-progress';
+      const overallPercent = lesson.進捗率.全体;
       tdProg.innerHTML = `
         <span class="step-matrix-percent" style="color:${color}">${phasePercent}%</span>
         <div class="step-matrix-minibar">
           <div class="step-matrix-minibar-fill" style="width:${phasePercent}%;background:${this.getGradient(color)}"></div>
         </div>
+        <span class="step-matrix-percent-overall" style="color:${CONFIG.COLORS.primary}">全体 ${overallPercent}%</span>
       `;
       tr.appendChild(tdProg);
       tbody.appendChild(tr);

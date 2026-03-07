@@ -2640,6 +2640,14 @@ body {
   transition: width 0.4s ease;
 }
 
+.step-matrix-percent-overall {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  margin-top: 2px;
+  opacity: 0.8;
+}
+
 /* --- ホバーエフェクト --- */
 .step-matrix tbody tr:hover {
   background: var(--color-primary-light);
