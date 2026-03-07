@@ -484,6 +484,93 @@ body {
   padding: 16px 20px;
 }
 
+/* ----- リリース日進捗ステータス ----- */
+.release-delay-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-xs);
+  margin-bottom: 12px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.release-delay-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-sub);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.release-delay-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.release-delay-expected {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.release-delay--ok {
+  background: rgba(16, 185, 129, 0.08);
+  border-left: 3px solid var(--color-success);
+}
+
+.release-delay--ok .release-delay-badge {
+  color: var(--color-success);
+}
+
+.release-delay--slight {
+  background: rgba(245, 158, 11, 0.08);
+  border-left: 3px solid var(--color-warning);
+}
+
+.release-delay--slight .release-delay-badge {
+  color: #92400E;
+}
+
+.release-delay--major {
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid var(--color-danger);
+}
+
+.release-delay--major .release-delay-badge {
+  color: var(--color-danger);
+}
+
+/* ----- タイムライン納期マーカー ----- */
+.timeline-deadline-marker {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 12px;
+  background: var(--color-warning);
+  border-radius: 1px;
+  transform: translateX(-1px);
+  z-index: 1;
+  opacity: 0.7;
+}
+
+.timeline-deadline-marker::after {
+  content: '納';
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.55rem;
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
 /* ----- カード内遅延バナー ----- */
 .card-delay-banner {
   display: flex;
@@ -1416,6 +1503,18 @@ body {
   }
   .stat-label {
     font-size: 0.72rem;
+  }
+
+  /* リリース日インジケーターレスポンシブ */
+  .release-delay-indicator {
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 0.72rem;
+    margin-bottom: 8px;
+  }
+  .release-delay-expected {
+    margin-left: 0;
+    width: 100%;
   }
 
   /* レッスンカード内の余白縮小 */

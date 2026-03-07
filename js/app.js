@@ -242,7 +242,21 @@ const App = {
 
     const progressArea = card.querySelector('.card-progress');
     progressArea.innerHTML = '';
-    progressArea.appendChild(Components.createProgressBar(lesson.進捗率.全体, CONFIG.COLORS.primary, '全体'));
+
+    // リリース日進捗インジケーター
+    const { element: releaseIndicator, delay: releaseDelay } = Components.createReleaseDelayIndicator(lesson);
+    if (releaseIndicator) {
+      progressArea.appendChild(releaseIndicator);
+    }
+
+    let overallColor = CONFIG.COLORS.primary;
+    if (releaseDelay.hasData && releaseDelay.status === 'majorDelay') {
+      overallColor = CONFIG.COLORS.danger;
+    } else if (releaseDelay.hasData && releaseDelay.status === 'slightDelay') {
+      overallColor = CONFIG.COLORS.warning;
+    }
+
+    progressArea.appendChild(Components.createProgressBar(lesson.進捗率.全体, overallColor, '全体'));
     progressArea.appendChild(Components.createProgressBar(lesson.進捗率.前工程, CONFIG.COLORS.前工程, '前工程'));
     progressArea.appendChild(Components.createProgressBar(lesson.進捗率.後工程, CONFIG.COLORS.後工程, '後工程'));
 

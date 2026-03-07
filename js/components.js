@@ -442,16 +442,19 @@ const Components = {
     }
 
     // ===== ガントチャート風タイムラインバー =====
-    if (lesson.開始日 && lesson.納期) {
+    if (lesson.開始日 && (lesson.納期 || lesson.リリース日)) {
       const timeline = document.createElement('div');
       timeline.className = 'card-timeline';
 
       const startD = new Date(lesson.開始日);
-      const endD = new Date(lesson.納期);
       const nowD = new Date();
       startD.setHours(0, 0, 0, 0);
-      endD.setHours(0, 0, 0, 0);
       nowD.setHours(0, 0, 0, 0);
+
+      // リリース日がある場合はリリース日を終点、なければ納期
+      const hasRelease = !!lesson.リリース日;
+      const endD = new Date(hasRelease ? lesson.リリース日 : lesson.納期);
+      endD.setHours(0, 0, 0, 0);
 
       const totalDays = Math.max((endD - startD) / (1000 * 60 * 60 * 24), 1);
       const elapsedDays = (nowD - startD) / (1000 * 60 * 60 * 24);
@@ -466,13 +469,26 @@ const Components = {
         progressColor = CONFIG.COLORS.danger;
       }
 
+      // 納期マーカー（リリース日を終点にした場合、納期位置に縦線を表示）
+      let deadlineMarkerHtml = '';
+      if (hasRelease && lesson.納期) {
+        const deadlineD = new Date(lesson.納期);
+        deadlineD.setHours(0, 0, 0, 0);
+        const deadlineDays = (deadlineD - startD) / (1000 * 60 * 60 * 24);
+        const deadlinePercent = Math.max(0, Math.min(100, (deadlineDays / totalDays) * 100));
+        deadlineMarkerHtml = `<div class="timeline-deadline-marker" style="left:${deadlinePercent}%;" title="納期: ${this.formatDate(lesson.納期)}"></div>`;
+      }
+
+      const endLabel = hasRelease ? this.formatDate(lesson.リリース日) : this.formatDate(lesson.納期);
+
       timeline.innerHTML = `
         <div class="timeline-labels">
           <span class="timeline-start">${this.formatDate(lesson.開始日)}</span>
-          <span class="timeline-end">${this.formatDate(lesson.納期)}</span>
+          <span class="timeline-end">${endLabel}</span>
         </div>
         <div class="timeline-track">
           <div class="timeline-progress" style="width:${progressPercent}%; background:${this.getGradient(progressColor)};"></div>
+          ${deadlineMarkerHtml}
           <div class="timeline-now-marker" style="left:${timePercent}%;" title="今日"></div>
         </div>
       `;
@@ -483,7 +499,22 @@ const Components = {
     // 進捗バー
     const progressArea = document.createElement('div');
     progressArea.className = 'card-progress';
-    progressArea.appendChild(this.createProgressBar(lesson.進捗率.全体, CONFIG.COLORS.primary, '全体'));
+
+    // リリース日進捗インジケーター
+    const { element: releaseIndicator, delay: releaseDelay } = this.createReleaseDelayIndicator(lesson);
+    if (releaseIndicator) {
+      progressArea.appendChild(releaseIndicator);
+    }
+
+    // 遅延度に応じて全体バーの色を変更
+    let overallColor = CONFIG.COLORS.primary;
+    if (releaseDelay.hasData && releaseDelay.status === 'majorDelay') {
+      overallColor = CONFIG.COLORS.danger;
+    } else if (releaseDelay.hasData && releaseDelay.status === 'slightDelay') {
+      overallColor = CONFIG.COLORS.warning;
+    }
+
+    progressArea.appendChild(this.createProgressBar(lesson.進捗率.全体, overallColor, '全体'));
     progressArea.appendChild(this.createProgressBar(lesson.進捗率.前工程, CONFIG.COLORS.前工程, '前工程'));
     progressArea.appendChild(this.createProgressBar(lesson.進捗率.後工程, CONFIG.COLORS.後工程, '後工程'));
 
@@ -877,6 +908,110 @@ const Components = {
     }
 
     return result;
+  },
+
+  // ========== ヘルパー: リリース日基準の進捗遅延検出 ==========
+  detectReleaseDelay(lesson) {
+    const result = {
+      hasData: false,
+      expectedPercent: null,
+      actualPercent: lesson.進捗率.全体,
+      gapPercent: 0,
+      status: 'none', // 'none' | 'onTrack' | 'slightDelay' | 'majorDelay'
+      releaseDateFormatted: ''
+    };
+
+    if (!lesson.リリース日 || !lesson.開始日) return result;
+    if (lesson.進捗率.全体 === 100) return result;
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const releaseD = new Date(lesson.リリース日);
+    releaseD.setHours(0, 0, 0, 0);
+    if (releaseD <= now) return result; // リリース日過去 → 非表示
+
+    const startD = new Date(lesson.開始日);
+    startD.setHours(0, 0, 0, 0);
+
+    result.hasData = true;
+    result.releaseDateFormatted = this.formatDate(lesson.リリース日);
+
+    // 全工程の累積予定日数を構築
+    const allSteps = [...CONFIG.前工程, ...CONFIG.後工程];
+    const totalSteps = allSteps.length;
+    let totalWeight = 0;
+    const cumulative = []; // cumulative[i] = i番目の工程完了までの累積日数
+    for (const step of allSteps) {
+      totalWeight += (CONFIG.STEP_DAYS[step] || 1);
+      cumulative.push(totalWeight);
+    }
+
+    // スケール比率: 実カレンダー日数 / 予定日数合計
+    const calendarDays = Math.max((releaseD - startD) / (1000 * 60 * 60 * 24), 1);
+    const scale = calendarDays / totalWeight;
+    const elapsedDays = Math.max((now - startD) / (1000 * 60 * 60 * 24), 0);
+
+    // 経過日数で「完了しているべき工程数」を算出
+    let expectedSteps = 0;
+    for (let i = 0; i < cumulative.length; i++) {
+      if (cumulative[i] * scale <= elapsedDays) {
+        expectedSteps = i + 1;
+      }
+    }
+
+    const expectedPercent = Math.min(100, Math.round((expectedSteps / totalSteps) * 100));
+    result.expectedPercent = expectedPercent;
+    result.gapPercent = lesson.進捗率.全体 - expectedPercent;
+
+    if (result.gapPercent >= -10) {
+      result.status = 'onTrack';
+    } else if (result.gapPercent >= -20) {
+      result.status = 'slightDelay';
+    } else {
+      result.status = 'majorDelay';
+    }
+
+    return result;
+  },
+
+  // ========== ヘルパー: リリース遅延インジケーターDOM生成 ==========
+  createReleaseDelayIndicator(lesson) {
+    const delay = this.detectReleaseDelay(lesson);
+    if (!delay.hasData) return { element: null, delay };
+
+    const el = document.createElement('div');
+    el.className = 'release-delay-indicator';
+
+    let statusIcon, statusText, statusClass;
+    if (delay.status === 'majorDelay') {
+      statusIcon = this.iconInline('triangle-alert', '#EF4444', 16);
+      statusText = `${Math.abs(delay.gapPercent)}%遅れ`;
+      statusClass = 'release-delay--major';
+    } else if (delay.status === 'slightDelay') {
+      statusIcon = this.iconInline('clock', '#F59E0B', 16);
+      statusText = `${Math.abs(delay.gapPercent)}%遅れ`;
+      statusClass = 'release-delay--slight';
+    } else {
+      statusIcon = this.iconInline('circle-check', '#10B981', 16);
+      statusText = '順調';
+      statusClass = 'release-delay--ok';
+    }
+
+    el.classList.add(statusClass);
+    el.innerHTML = `
+      <span class="release-delay-label">
+        ${this.iconInline('target', '#6B7280', 14)}
+        リリース: ${delay.releaseDateFormatted}
+      </span>
+      <span class="release-delay-badge">
+        ${statusIcon} ${statusText}
+      </span>
+      <span class="release-delay-expected">
+        期待 ${delay.expectedPercent}% / 実績 ${delay.actualPercent}%
+      </span>
+    `;
+
+    return { element: el, delay };
   },
 
   // ========== ヘルパー: 最後に完了した工程名 ==========
