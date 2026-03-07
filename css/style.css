@@ -2958,3 +2958,128 @@ body {
 .folder-modal-icon svg {
   stroke-width: 1.5;
 }
+
+/* ============================================================
+   ウェビナービュー
+   ============================================================ */
+
+.webinar-view-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.webinar-section {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.webinar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.webinar-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border-left: 4px solid #3B82F6;
+  transition: box-shadow 0.2s;
+}
+
+.webinar-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.webinar-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.webinar-card-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #1E1B4B;
+}
+
+.webinar-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.webinar-card-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.8rem;
+  color: #6B7280;
+  margin-bottom: 12px;
+}
+
+.webinar-card-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.webinar-card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.webinar-status-select {
+  padding: 4px 8px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  background: #fff;
+}
+
+.btn-danger-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid #FCA5A5;
+  border-radius: 8px;
+  background: #FEF2F2;
+  color: #EF4444;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-danger-sm:hover {
+  background: #FEE2E2;
+}
+
+.assignee-section-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6B7280;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 768px) {
+  .webinar-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .webinar-card-meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+}

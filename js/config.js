@@ -185,6 +185,54 @@ const CONFIG = {
     ]
   },
 
+  // ウェビナーステータス定義
+  WEBINAR_STATUSES: [
+    { value: '準備中', label: '準備中', color: '#F59E0B', icon: 'clock' },
+    { value: '実施済み', label: '実施済み', color: '#10B981', icon: 'circle-check' },
+    { value: 'キャンセル', label: 'キャンセル', color: '#9CA3AF', icon: 'x-circle' }
+  ],
+
+  // ウェビナー登録フォームのフィールド定義
+  WEBINAR_FORM_FIELDS: [
+    {
+      id: 'webinarName',
+      label: 'ウェビナー名',
+      type: 'text',
+      required: true,
+      placeholder: '例: AI活用セミナー 第3回',
+      maxlength: 200,
+      columnName: 'ウェビナー名'
+    },
+    {
+      id: 'webinarAssignee',
+      label: '担当者名',
+      type: 'text',
+      required: true,
+      placeholder: '例: 田中太郎',
+      maxlength: 100,
+      columnName: '担当者名'
+    },
+    {
+      id: 'webinarDate',
+      label: '開催日',
+      type: 'date',
+      required: false,
+      columnName: '開催日'
+    },
+    {
+      id: 'webinarStatus',
+      label: 'ステータス',
+      type: 'select',
+      required: true,
+      columnName: 'ステータス',
+      options: [
+        { value: '準備中', label: '準備中' },
+        { value: '実施済み', label: '実施済み' },
+        { value: 'キャンセル', label: 'キャンセル' }
+      ]
+    }
+  ],
+
   COLORS: {
     前工程: '#10B981',
     前工程Light: '#ECFDF5',

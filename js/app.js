@@ -5,6 +5,7 @@
 const App = {
   state: {
     lessons: [],
+    webinars: [],
     filterAssignee: 'all',
     isLoading: true,
     pollTimer: null,
@@ -57,6 +58,7 @@ const App = {
       }
 
       this.state.lessons = data.lessons || [];
+      this.state.webinars = data.webinars || [];
       this.state.isLoading = false;
 
       this.updateFilterOptions();
@@ -67,6 +69,11 @@ const App = {
       // レビュービュー表示中ならダッシュボードも更新
       if (this.state.currentView === 'review') {
         this.renderReviewDashboard();
+      }
+
+      // ウェビナービュー表示中ならウェビナーも更新
+      if (this.state.currentView === 'webinar') {
+        this.renderWebinarView();
       }
     } catch (err) {
       Components.showToast('通信エラー: サーバーに接続できません', 'error');
@@ -79,7 +86,9 @@ const App = {
   updateFilterOptions() {
     const select = document.getElementById('filterAssignee');
     const current = select.value;
-    const assignees = [...new Set(this.state.lessons.map(l => l.担当者名).filter(Boolean))];
+    const lessonAssignees = this.state.lessons.map(l => l.担当者名).filter(Boolean);
+    const webinarAssignees = this.state.webinars.map(w => w.担当者名).filter(Boolean);
+    const assignees = [...new Set([...lessonAssignees, ...webinarAssignees])];
 
     // 先頭の「全担当者」以外を削除
     while (select.options.length > 1) {
@@ -350,6 +359,9 @@ const App = {
       case 'entry':
         targetPanel = document.getElementById('viewEntry');
         break;
+      case 'webinar':
+        targetPanel = document.getElementById('viewWebinar');
+        break;
       case 'review':
         targetPanel = document.getElementById('viewReview');
         break;
@@ -371,6 +383,11 @@ const App = {
     if (viewName === 'review') {
       this.renderReviewDashboard();
     }
+
+    // ウェビナービューを描画
+    if (viewName === 'webinar') {
+      this.renderWebinarView();
+    }
   },
 
   // ===== データ入力フォーム描画 =====
@@ -386,11 +403,86 @@ const App = {
   },
 
   // ============================================================
+  // ウェビナー管理
+  // ============================================================
+
+  renderWebinarView() {
+    const container = document.getElementById('webinarSection');
+    container.innerHTML = '';
+    const view = Components.createWebinarView(
+      this.state.webinars,
+      (formData) => this.onWebinarSubmit(formData),
+      (rowIndex, status) => this.onWebinarStatusChange(rowIndex, status),
+      (rowIndex, name) => this.onDeleteWebinar(rowIndex, name)
+    );
+    container.appendChild(view);
+    this.refreshIcons();
+  },
+
+  async onWebinarSubmit(formData) {
+    if (!formData.ウェビナー名 || !formData.担当者名) {
+      Components.showToast('ウェビナー名と担当者名は必須です', 'error');
+      return;
+    }
+    Components.showLoader(true);
+    try {
+      const result = await API.addWebinar(formData);
+      if (result.error) {
+        Components.showToast('登録失敗: ' + result.error, 'error');
+        return;
+      }
+      Components.showToast('ウェビナーを登録しました', 'success');
+      await this.loadData();
+    } catch (err) {
+      Components.showToast('通信エラー: 登録に失敗しました', 'error');
+    } finally {
+      Components.showLoader(false);
+    }
+  },
+
+  async onWebinarStatusChange(rowIndex, newStatus) {
+    const webinar = this.state.webinars.find(w => w.rowIndex === rowIndex);
+    if (!webinar) return;
+    const oldStatus = webinar.ステータス;
+    webinar.ステータス = newStatus;
+    this.renderWebinarView();
+
+    try {
+      const result = await API.updateWebinarStatus(rowIndex, newStatus);
+      if (result.error) throw new Error(result.error);
+    } catch (err) {
+      webinar.ステータス = oldStatus;
+      Components.showToast('ステータス更新に失敗しました', 'error');
+      await this.loadData();
+    }
+  },
+
+  async onDeleteWebinar(rowIndex, name) {
+    if (!confirm(`「${name}」を削除しますか？\nこの操作は元に戻せません。`)) return;
+    Components.showLoader(true);
+    try {
+      const result = await API.deleteWebinar(rowIndex);
+      if (result.error) {
+        Components.showToast('削除失敗: ' + result.error, 'error');
+        return;
+      }
+      Components.showToast('ウェビナーを削除しました', 'success');
+      await this.loadData();
+    } catch (err) {
+      Components.showToast('通信エラー: 削除に失敗しました', 'error');
+    } finally {
+      Components.showLoader(false);
+    }
+  },
+
+  // ============================================================
   // 定例レビューダッシュボード
   // ============================================================
 
   // ===== レビューデータ計算 =====
-  computeReviewData(lessons) {
+  computeReviewData(lessons, webinars) {
+    webinars = webinars || [];
+
     const statusGroups = {
       released: [],
       nearRelease: [],
@@ -409,7 +501,7 @@ const App = {
       // 担当者別集計
       const name = lesson.担当者名 || '（未割当）';
       if (!assignees[name]) {
-        assignees[name] = { lessons: [] };
+        assignees[name] = { lessons: [], webinars: [] };
       }
       assignees[name].lessons.push(lesson);
 
@@ -422,6 +514,25 @@ const App = {
           isWarning: delay.isWarning,
           isDelayed: delay.isDelayed
         });
+      }
+    });
+
+    // ウェビナーを担当者別に集計
+    webinars.forEach(w => {
+      const name = w.担当者名 || '（未割当）';
+      if (!assignees[name]) {
+        assignees[name] = { lessons: [], webinars: [] };
+      }
+      if (!assignees[name].webinars) {
+        assignees[name].webinars = [];
+      }
+      assignees[name].webinars.push(w);
+    });
+
+    // 既存の担当者にもwebinars配列を保証
+    Object.keys(assignees).forEach(name => {
+      if (!assignees[name].webinars) {
+        assignees[name].webinars = [];
       }
     });
 
@@ -456,7 +567,11 @@ const App = {
       delayCount: delays.filter(d => d.isDelayed).length,
       warningCount: delays.filter(d => d.isWarning).length,
       bottleneckSteps,
-      worstDelays
+      worstDelays,
+      webinarTotal: webinars.length,
+      webinar準備中: webinars.filter(w => w.ステータス === '準備中').length,
+      webinar実施済み: webinars.filter(w => w.ステータス === '実施済み').length,
+      webinarキャンセル: webinars.filter(w => w.ステータス === 'キャンセル').length
     };
 
     return { statusGroups, assignees, delays, stats };
@@ -504,6 +619,13 @@ const App = {
     // 平均進捗
     lines.push(`<br>全体の平均進捗率は <span class="report-highlight">${stats.avgProgress}%</span> です。`);
 
+    // ウェビナー状況
+    if (stats.webinarTotal > 0) {
+      lines.push(`<br>ウェビナーは全 <span class="report-highlight">${stats.webinarTotal}件</span>、`);
+      lines.push(`<span class="report-highlight">${stats.webinar実施済み}件</span> が実施済み、`);
+      lines.push(`<span class="report-highlight">${stats.webinar準備中}件</span> が準備中です。`);
+    }
+
     // 遅延状況
     if (stats.delayCount > 0) {
       lines.push(`<br><i data-lucide="triangle-alert" style="width:16px;height:16px;color:#EF4444;vertical-align:middle;"></i> <span class="report-highlight report-danger">${stats.delayCount}件</span> の教材で納期超過が発生しています。`);
@@ -528,7 +650,7 @@ const App = {
       return;
     }
 
-    const reviewData = this.computeReviewData(this.state.lessons);
+    const reviewData = this.computeReviewData(this.state.lessons, this.state.webinars);
 
     // セクション1: 総論レポート（ビジュアルダッシュボード）
     container.appendChild(Components.createReviewSummaryReport(reviewData));

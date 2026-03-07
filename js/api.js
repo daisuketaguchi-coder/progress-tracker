@@ -77,5 +77,30 @@ const API = {
       columnName,
       value
     });
+  },
+
+  async addWebinar(formData) {
+    return this.postAction({
+      action: 'addWebinar',
+      ウェビナー名: formData.ウェビナー名,
+      担当者名: formData.担当者名,
+      開催日: formData.開催日 || '',
+      ステータス: formData.ステータス || '準備中'
+    });
+  },
+
+  async updateWebinarStatus(rowIndex, status) {
+    return this.postAction({
+      action: 'updateWebinarStatus',
+      rowIndex,
+      ステータス: status
+    });
+  },
+
+  async deleteWebinar(rowIndex) {
+    return this.postAction({
+      action: 'deleteWebinar',
+      rowIndex
+    });
   }
 };

@@ -20,6 +20,17 @@ const TEMPLATE_FOLDER_ID = '12Qtt9HUAKLWAV4xSeJPSJ8fhscflbUz-';
 // Slack通知を送る列名（C列:キックオフ, E列:アウトライン作成, G列:スライド構成案作成, L列:台本チェック）
 const SLACK_NOTIFY_COLUMNS = ['キックオフ', 'アウトライン作成', 'スライド構成案作成', '台本チェック'];
 
+// ===== ウェビナー管理表設定 =====
+const WEBINAR_SHEET_NAME = 'ウェビナー管理表';
+const WEBINAR_DATA_START_ROW = 3;
+const WEBINAR_COLUMN_MAP = {
+  'ウェビナー名': 1,
+  '担当者名': 2,
+  '開催日': 3,
+  'ステータス': 4
+};
+const WEBINAR_STATUSES = ['準備中', '実施済み', 'キャンセル'];
+
 const COLUMN_MAP = {
   '担当者名': 1,
   'レッスン名': 2,
@@ -75,6 +86,10 @@ function doGet(e) {
     switch (action) {
       case 'getAll':
         result = getAllLessons();
+        result.webinars = getAllWebinars().webinars;
+        break;
+      case 'getAllWebinars':
+        result = getAllWebinars();
         break;
       default:
         result = { error: '不明なアクション: ' + action };
@@ -115,6 +130,15 @@ function doPost(e) {
         break;
       case 'updateField':
         result = updateField(body.rowIndex, body.columnName, body.value);
+        break;
+      case 'addWebinar':
+        result = addWebinar(body);
+        break;
+      case 'updateWebinarStatus':
+        result = updateWebinarStatus(body.rowIndex, body.ステータス);
+        break;
+      case 'deleteWebinar':
+        result = deleteWebinar(body.rowIndex);
         break;
       default:
         result = { error: '不明なアクション: ' + action };
@@ -458,6 +482,92 @@ function copyFolderContents_(source, destination) {
     var newSub = destination.createFolder(folder.getName());
     copyFolderContents_(folder, newSub);
   }
+}
+
+// ============================================================
+// ウェビナー管理
+// ============================================================
+
+// ===== ウェビナー全取得 =====
+function getAllWebinars() {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName(WEBINAR_SHEET_NAME);
+  if (!sheet) return { webinars: [] };
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow < WEBINAR_DATA_START_ROW) return { webinars: [] };
+
+  var numRows = lastRow - WEBINAR_DATA_START_ROW + 1;
+  var data = sheet.getRange(WEBINAR_DATA_START_ROW, 1, numRows, 4).getValues();
+  var webinars = [];
+
+  for (var i = 0; i < data.length; i++) {
+    var row = data[i];
+    if (row[0] === '' && row[1] === '') continue;
+
+    var eventDate = row[WEBINAR_COLUMN_MAP['開催日'] - 1];
+
+    webinars.push({
+      rowIndex: i + WEBINAR_DATA_START_ROW,
+      ウェビナー名: row[0],
+      担当者名: row[1],
+      開催日: (eventDate instanceof Date) ? eventDate.toISOString() : (eventDate || ''),
+      ステータス: row[3] || '準備中'
+    });
+  }
+
+  return { webinars: webinars };
+}
+
+// ===== ウェビナー追加 =====
+function addWebinar(data) {
+  if (!data.ウェビナー名) return { error: 'ウェビナー名は必須です' };
+  if (!data.担当者名) return { error: '担当者名は必須です' };
+
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName(WEBINAR_SHEET_NAME);
+  if (!sheet) return { error: 'ウェビナー管理表シートが見つかりません' };
+
+  var newRow = getNextWebinarRow(sheet);
+  sheet.getRange(newRow, 1).setValue(data.ウェビナー名);
+  sheet.getRange(newRow, 2).setValue(data.担当者名);
+  if (data.開催日) {
+    sheet.getRange(newRow, 3).setValue(new Date(data.開催日));
+  }
+  sheet.getRange(newRow, 4).setValue(data.ステータス || '準備中');
+
+  return { success: true, rowIndex: newRow };
+}
+
+// ===== ウェビナーの次の空き行 =====
+function getNextWebinarRow(sheet) {
+  var values = sheet.getRange('A:B').getValues();
+  var lastDataRow = WEBINAR_DATA_START_ROW - 1;
+  for (var i = values.length - 1; i >= WEBINAR_DATA_START_ROW - 1; i--) {
+    if (values[i][0] !== '' || values[i][1] !== '') {
+      lastDataRow = i + 1;
+      break;
+    }
+  }
+  return lastDataRow + 1;
+}
+
+// ===== ウェビナーステータス更新 =====
+function updateWebinarStatus(rowIndex, status) {
+  if (!rowIndex) return { error: '行番号が必要です' };
+  if (!WEBINAR_STATUSES.includes(status)) return { error: '不正なステータス: ' + status };
+
+  var sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(WEBINAR_SHEET_NAME);
+  sheet.getRange(rowIndex, WEBINAR_COLUMN_MAP['ステータス']).setValue(status);
+  return { success: true, rowIndex: rowIndex, ステータス: status };
+}
+
+// ===== ウェビナー削除 =====
+function deleteWebinar(rowIndex) {
+  if (!rowIndex) return { error: '行番号が必要です' };
+  var sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(WEBINAR_SHEET_NAME);
+  sheet.deleteRow(rowIndex);
+  return { success: true };
 }
 
 // ===== フィールド更新（担当者名・レッスン名） =====

@@ -1377,11 +1377,16 @@ const Components = {
     // 項目4: 最高負荷の担当者
     if (reviewData.assignees) {
       const sorted = Object.entries(reviewData.assignees)
-        .map(([name, data]) => ({ name, count: data.lessons.length }))
+        .map(([name, data]) => ({ name, count: data.lessons.length + (data.webinars || []).length }))
         .sort((a, b) => b.count - a.count);
       if (sorted.length > 0 && sorted[0].count >= 2) {
         items.push(`${sorted[0].name}が${sorted[0].count}件担当で最も高負荷`);
       }
+    }
+
+    // 項目5: ウェビナー状況
+    if (stats.webinarTotal > 0) {
+      items.push(`ウェビナーは${stats.webinarTotal}件（うち準備中${stats.webinar準備中}件）`);
     }
 
     const panel = document.createElement('div');
@@ -1403,7 +1408,8 @@ const Components = {
       { value: stats.released, label: 'リリース済み', icon: CONFIG.ICONS.released, color: '#10B981' },
       { value: stats.nearRelease, label: 'リリース間近', icon: CONFIG.ICONS.nearRelease, color: '#F59E0B' },
       { value: stats.inProgress, label: '進行中', icon: CONFIG.ICONS.inProgress, color: '#7C3AED' },
-      { value: stats.notStarted, label: '未着手', icon: CONFIG.ICONS.notStarted, color: '#9CA3AF' }
+      { value: stats.notStarted, label: '未着手', icon: CONFIG.ICONS.notStarted, color: '#9CA3AF' },
+      { value: stats.webinarTotal || 0, label: 'ウェビナー', icon: 'video', color: '#3B82F6' }
     ];
 
     cards.forEach(c => {
@@ -1656,18 +1662,32 @@ const Components = {
     const card = document.createElement('div');
     card.className = 'assignee-card';
 
-    // 負荷判定
-    const workloadCfg = this.getWorkloadConfig(data.lessons.length);
+    // 負荷判定（教材 + ウェビナーの合計）
+    const webinarCount = (data.webinars || []).length;
+    const totalItems = data.lessons.length + webinarCount;
+    const workloadCfg = this.getWorkloadConfig(totalItems);
 
-    // 平均進捗率
+    // 平均進捗率（教材のみ）
     const avgProgress = data.lessons.length > 0
       ? Math.round(data.lessons.reduce((s, l) => s + l.進捗率.全体, 0) / data.lessons.length)
       : 0;
 
+    // ウェビナーセクション
+    const webinarHtml = (data.webinars && data.webinars.length > 0) ? `
+      <div class="assignee-section-label">ウェビナー（${data.webinars.length}件）</div>
+      ${data.webinars.map(w => {
+        const sCfg = CONFIG.WEBINAR_STATUSES.find(s => s.value === w.ステータス) || {};
+        return `<div class="assignee-lesson-row">
+          <span class="assignee-lesson-name">${this.escapeHtml(w.ウェビナー名)}</span>
+          <span class="assignee-lesson-progress" style="color:${sCfg.color || '#6B7280'}">${w.ステータス}</span>
+        </div>`;
+      }).join('')}
+    ` : '';
+
     card.innerHTML = `
       <div class="assignee-header">
         <span class="assignee-name">${this.escapeHtml(name)}</span>
-        <span class="workload-badge" style="background:${workloadCfg.color}">${workloadCfg.label}（${data.lessons.length}件）</span>
+        <span class="workload-badge" style="background:${workloadCfg.color}">${workloadCfg.label}（${totalItems}件）</span>
       </div>
       <div class="assignee-progress-bar">
         <div class="progress-bar">
@@ -1676,12 +1696,14 @@ const Components = {
         <span class="assignee-progress-text">平均 ${avgProgress}%</span>
       </div>
       <div class="assignee-lessons">
+        ${data.lessons.length > 0 && webinarCount > 0 ? '<div class="assignee-section-label">教材（' + data.lessons.length + '件）</div>' : ''}
         ${data.lessons.map(l => `
           <div class="assignee-lesson-row">
             <span class="assignee-lesson-name">${this.escapeHtml(l.レッスン名)}</span>
             <span class="assignee-lesson-progress">${l.進捗率.全体}%</span>
           </div>
         `).join('')}
+        ${webinarHtml}
       </div>
     `;
     return card;
@@ -1795,5 +1817,194 @@ const Components = {
     });
 
     return data;
+  },
+
+  // ============================================================
+  // ウェビナー管理コンポーネント
+  // ============================================================
+
+  // ===== ウェビナービュー全体 =====
+  createWebinarView(webinars, onSubmit, onStatusChange, onDelete) {
+    const container = document.createElement('div');
+    container.className = 'webinar-view-container';
+
+    container.appendChild(this.createWebinarForm(onSubmit));
+    container.appendChild(this.createWebinarSummaryStrip(webinars));
+    container.appendChild(this.createWebinarList(webinars, onStatusChange, onDelete));
+
+    return container;
+  },
+
+  // ===== ウェビナー登録フォーム =====
+  createWebinarForm(onSubmit) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'entry-form-container';
+
+    const header = document.createElement('div');
+    header.className = 'entry-form-header';
+    header.innerHTML = `
+      <h2>${this.iconInline('video', '#3B82F6', 20)} ウェビナー登録</h2>
+      <p class="entry-form-description">新しいウェビナーを登録します。</p>
+    `;
+
+    const form = document.createElement('form');
+    form.id = 'webinarEntryForm';
+    form.className = 'entry-form';
+
+    const section = document.createElement('div');
+    section.className = 'entry-form-section';
+
+    CONFIG.WEBINAR_FORM_FIELDS.forEach(field => {
+      section.appendChild(this.createFormField(field));
+    });
+    form.appendChild(section);
+
+    const actions = document.createElement('div');
+    actions.className = 'entry-form-actions';
+    actions.innerHTML = `
+      <button type="button" class="btn-secondary" id="webinarFormClear">クリア</button>
+      <button type="submit" class="btn-primary-filled">登録する</button>
+    `;
+    form.appendChild(actions);
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const data = this.collectWebinarFormData(form);
+      onSubmit(data);
+    });
+
+    actions.querySelector('#webinarFormClear').addEventListener('click', () => {
+      form.reset();
+    });
+
+    wrapper.appendChild(header);
+    wrapper.appendChild(form);
+    return wrapper;
+  },
+
+  // ===== ウェビナーフォームデータ収集 =====
+  collectWebinarFormData(form) {
+    const data = {};
+    CONFIG.WEBINAR_FORM_FIELDS.forEach(field => {
+      const input = form.querySelector('#entry_' + field.id);
+      if (input && field.columnName) {
+        data[field.columnName] = input.value.trim();
+      }
+    });
+    return data;
+  },
+
+  // ===== ウェビナーサマリーストリップ =====
+  createWebinarSummaryStrip(webinars) {
+    const strip = document.createElement('div');
+    strip.className = 'kpi-strip';
+    strip.style.marginBottom = '24px';
+
+    const total = webinars.length;
+    const preparing = webinars.filter(w => w.ステータス === '準備中').length;
+    const done = webinars.filter(w => w.ステータス === '実施済み').length;
+    const cancelled = webinars.filter(w => w.ステータス === 'キャンセル').length;
+
+    const cards = [
+      { value: total, label: '全ウェビナー', icon: 'video', color: '#3B82F6' },
+      { value: preparing, label: '準備中', icon: 'clock', color: '#F59E0B' },
+      { value: done, label: '実施済み', icon: 'circle-check', color: '#10B981' },
+      { value: cancelled, label: 'キャンセル', icon: 'x-circle', color: '#9CA3AF' }
+    ];
+
+    cards.forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'kpi-card' + (c.value === 0 ? ' kpi-card--zero' : '');
+      card.style.borderLeftColor = c.color;
+      card.innerHTML = `
+        <div class="kpi-icon">${this.iconHtml(c.icon, c.color, 44)}</div>
+        <div class="kpi-value" style="color:${c.color}">${c.value}</div>
+        <div class="kpi-label">${c.label}</div>
+      `;
+      strip.appendChild(card);
+    });
+
+    return strip;
+  },
+
+  // ===== ウェビナー一覧 =====
+  createWebinarList(webinars, onStatusChange, onDelete) {
+    const section = document.createElement('div');
+    section.className = 'review-section';
+
+    const title = document.createElement('h2');
+    title.className = 'review-section-title';
+    title.innerHTML = `${this.iconHtml('list', '#3B82F6', 32)} ウェビナー一覧`;
+    section.appendChild(title);
+
+    if (webinars.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = 'ウェビナーがありません';
+      section.appendChild(empty);
+      return section;
+    }
+
+    const list = document.createElement('div');
+    list.className = 'webinar-list';
+
+    webinars.forEach(w => {
+      list.appendChild(this.createWebinarCard(w, onStatusChange, onDelete));
+    });
+
+    section.appendChild(list);
+    return section;
+  },
+
+  // ===== ウェビナーカード =====
+  createWebinarCard(webinar, onStatusChange, onDelete) {
+    const card = document.createElement('div');
+    card.className = 'webinar-card';
+    card.dataset.rowIndex = webinar.rowIndex;
+
+    const statusCfg = CONFIG.WEBINAR_STATUSES.find(s => s.value === webinar.ステータス)
+      || CONFIG.WEBINAR_STATUSES[0];
+
+    const dateText = webinar.開催日 ? this.formatDate(webinar.開催日) : '未定';
+
+    card.innerHTML = `
+      <div class="webinar-card-header">
+        <span class="webinar-card-name">${this.escapeHtml(webinar.ウェビナー名)}</span>
+        <span class="webinar-status-badge" style="background:${statusCfg.color}">
+          ${this.iconInline(statusCfg.icon, '#fff', 14)} ${statusCfg.label}
+        </span>
+      </div>
+      <div class="webinar-card-meta">
+        <span>${this.iconInline('user', '#6B7280', 14)} ${this.escapeHtml(webinar.担当者名)}</span>
+        <span>${this.iconInline('calendar', '#6B7280', 14)} ${dateText}</span>
+      </div>
+      <div class="webinar-card-actions"></div>
+    `;
+
+    const actionsEl = card.querySelector('.webinar-card-actions');
+
+    const statusSelect = document.createElement('select');
+    statusSelect.className = 'webinar-status-select';
+    CONFIG.WEBINAR_STATUSES.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.value;
+      opt.textContent = s.label;
+      opt.selected = s.value === webinar.ステータス;
+      statusSelect.appendChild(opt);
+    });
+    statusSelect.addEventListener('change', () => {
+      onStatusChange(webinar.rowIndex, statusSelect.value);
+    });
+    actionsEl.appendChild(statusSelect);
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn-danger-sm';
+    deleteBtn.innerHTML = this.iconInline('trash-2', '#EF4444', 14) + ' 削除';
+    deleteBtn.addEventListener('click', () => {
+      onDelete(webinar.rowIndex, webinar.ウェビナー名);
+    });
+    actionsEl.appendChild(deleteBtn);
+
+    return card;
   }
 };
