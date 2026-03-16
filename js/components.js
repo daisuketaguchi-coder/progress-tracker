@@ -61,6 +61,8 @@ const Components = {
     const total = lessons.length;
     const completed = lessons.filter(l => l.進捗率.全体 === 100).length;
     const inProgress = total - completed;
+    const tocCount = lessons.filter(l => l.対象 === 'toC').length;
+    const tobCount = lessons.filter(l => l.対象 === 'toB').length;
 
     const avgAll = total > 0 ? Math.round(lessons.reduce((s, l) => s + l.進捗率.全体, 0) / total) : 0;
     const avgPre = total > 0 ? Math.round(lessons.reduce((s, l) => s + l.進捗率.前工程, 0) / total) : 0;
@@ -74,6 +76,10 @@ const Components = {
             <div class="stat-number">${total}</div>
           </div>
           <div class="stat-label">総レッスン</div>
+          <div class="stat-sub-breakdown">
+            <span class="stat-sub-badge stat-sub-badge--toc">toC: ${tocCount}</span>
+            <span class="stat-sub-badge stat-sub-badge--tob">toB: ${tobCount}</span>
+          </div>
         </div>
         <div class="stat-card">
           <div class="stat-card-header">
@@ -115,8 +121,9 @@ const Components = {
     text.className = 'checkbox-label-text';
     text.textContent = label;
 
-    // div全体のクリックでトグル
+    // div全体のクリックでトグル（ボタン領域のクリックは除外）
     item.addEventListener('click', (e) => {
+      if (e.target.closest('.btn-thumbnail-template') || e.target.closest('.btn-review-request') || e.target.closest('.btn-step-link')) return;
       e.preventDefault();
       const newVal = !checkbox.checked;
       checkbox.checked = newVal;
@@ -177,7 +184,7 @@ const Components = {
   },
 
   // ========== 工程セクション（前工程/後工程） ==========
-  createProcessSection(title, color, lightColor, steps, data, rowIndex, onCheck, onReviewRequest) {
+  createProcessSection(title, color, lightColor, steps, data, rowIndex, onCheck, onReviewRequest, lesson) {
     const section = document.createElement('div');
     section.className = 'process-section';
 
@@ -201,6 +208,60 @@ const Components = {
       const item = this.createCheckboxItem(step, checked, (newValue) => {
         onCheck(rowIndex, step, newValue);
       }, reviewCallback);
+
+      // ひな型コピーボタン（STEP_TEMPLATESに定義がある工程のみ）
+      const tplConfig = CONFIG.STEP_TEMPLATES && CONFIG.STEP_TEMPLATES[step];
+      if (tplConfig && lesson) {
+        const templateBtn = document.createElement('button');
+        templateBtn.className = 'btn-thumbnail-template';
+        templateBtn.innerHTML = `<i data-lucide="clipboard-copy" style="width:13px;height:13px;"></i> ${tplConfig.label}`;
+        templateBtn.title = tplConfig.title;
+        templateBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          const courseName = lesson.コース名 || lesson.レッスン名 || '';
+          const releaseDate = lesson.リリース日 || '';
+          const text = tplConfig.template
+            .replace(/\{\{コース名\}\}/g, courseName)
+            .replace(/\{\{リリース日\}\}/g, releaseDate);
+
+          const onSuccess = () => {
+            Components.showToast(tplConfig.toast, 'success');
+            templateBtn.innerHTML = '<i data-lucide="check" style="width:13px;height:13px;"></i> コピー済';
+            lucide.createIcons();
+            setTimeout(() => {
+              templateBtn.innerHTML = `<i data-lucide="clipboard-copy" style="width:13px;height:13px;"></i> ${tplConfig.label}`;
+              lucide.createIcons();
+            }, 2000);
+          };
+
+          // Clipboard API → fallback to execCommand
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(onSuccess).catch(() => {
+              const ta = document.createElement('textarea');
+              ta.value = text;
+              ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+              document.body.appendChild(ta);
+              ta.select();
+              document.execCommand('copy');
+              document.body.removeChild(ta);
+              onSuccess();
+            });
+          } else {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            onSuccess();
+          }
+        });
+        item.appendChild(templateBtn);
+        setTimeout(() => lucide.createIcons(), 0);
+      }
+
       body.appendChild(item);
     });
 
@@ -331,6 +392,104 @@ const Components = {
     return wrapper;
   },
 
+  // ========== 日付編集フィールド ==========
+  createEditableDateField(dateStr, label, iconPath, iconColor, onSave) {
+    const wrapper = document.createElement('span');
+    wrapper.className = 'card-date-item editable-date-field';
+
+    // 表示モード
+    const display = document.createElement('span');
+    display.className = 'editable-date-display';
+    display.innerHTML = `${this.iconInline(iconPath, iconColor, 14)} ${label}: <span class="date-text">${dateStr ? this.formatDate(dateStr) : '未設定'}</span>`;
+    display.title = 'クリックして編集';
+    display.style.cursor = 'pointer';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-edit-field btn-edit-date';
+    editBtn.innerHTML = `<i data-lucide="${CONFIG.ICONS.edit}" style="width:12px;height:12px;"></i>`;
+    editBtn.title = '編集';
+
+    // 編集モード
+    const editor = document.createElement('span');
+    editor.className = 'editable-date-editor';
+    editor.style.display = 'none';
+
+    const input = document.createElement('input');
+    input.type = 'date';
+    input.className = 'editable-date-input';
+    if (dateStr) {
+      const d = new Date(dateStr);
+      if (!isNaN(d.getTime())) {
+        input.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      }
+    }
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'btn-edit-confirm';
+    confirmBtn.innerHTML = '&#10003;';
+    confirmBtn.title = '確定';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn-edit-cancel';
+    cancelBtn.innerHTML = '&#10005;';
+    cancelBtn.title = 'キャンセル';
+
+    editor.appendChild(input);
+    editor.appendChild(confirmBtn);
+    editor.appendChild(cancelBtn);
+
+    wrapper.appendChild(display);
+    wrapper.appendChild(editBtn);
+    wrapper.appendChild(editor);
+
+    const startEdit = (e) => {
+      e.stopPropagation();
+      display.style.display = 'none';
+      editBtn.style.display = 'none';
+      editor.style.display = 'inline-flex';
+      input.focus();
+    };
+
+    const cancelEdit = () => {
+      editor.style.display = 'none';
+      display.style.display = '';
+      editBtn.style.display = '';
+    };
+
+    const saveEdit = async () => {
+      const newValue = input.value; // yyyy-mm-dd or empty
+      input.disabled = true;
+      confirmBtn.disabled = true;
+      cancelBtn.disabled = true;
+      confirmBtn.innerHTML = '...';
+
+      try {
+        await onSave(newValue);
+        const dateTextEl = display.querySelector('.date-text');
+        dateTextEl.textContent = newValue ? this.formatDate(newValue) : '未設定';
+        cancelEdit();
+      } catch (err) {
+        // 失敗時は編集モードのまま
+      } finally {
+        input.disabled = false;
+        confirmBtn.disabled = false;
+        cancelBtn.disabled = false;
+        confirmBtn.innerHTML = '&#10003;';
+      }
+    };
+
+    display.addEventListener('click', startEdit);
+    editBtn.addEventListener('click', startEdit);
+    confirmBtn.addEventListener('click', (e) => { e.stopPropagation(); saveEdit(); });
+    cancelBtn.addEventListener('click', (e) => { e.stopPropagation(); cancelEdit(); });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+      if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
+    });
+
+    return wrapper;
+  },
+
   // ========== レッスンカード ==========
   createLessonCard(lesson, onCheck, onDelete, onReviewRequest, onEditField) {
     const card = document.createElement('div');
@@ -362,9 +521,17 @@ const Components = {
     );
     cardInfo.appendChild(lessonNameField);
 
-    // カテゴリ名・コース名 メタラベル（編集可能）
+    // 対象・カテゴリ名・コース名 メタラベル（編集可能）
     const metaLabels = document.createElement('div');
     metaLabels.className = 'card-meta-labels';
+
+    // toC/toB バッジ
+    if (lesson.対象) {
+      const targetBadge = document.createElement('span');
+      targetBadge.className = 'card-target-badge card-target-badge--' + lesson.対象;
+      targetBadge.textContent = lesson.対象;
+      metaLabels.appendChild(targetBadge);
+    }
 
     const categoryField = this.createEditableField(
       lesson.カテゴリ名 || '（未設定）',
@@ -422,22 +589,35 @@ const Components = {
     }
 
     // ===== 日付情報行 =====
-    const hasAnyDate = lesson.開始日 || lesson.納期 || lesson.リリース日;
+    // リリース日は常に表示（編集可能にするため、未設定でも表示）
+    const hasAnyDate = lesson.開始日 || lesson.納期 || lesson.リリース日 || true;
     if (hasAnyDate) {
       const dateRow = document.createElement('div');
       dateRow.className = 'card-dates';
 
-      let dateHtml = '';
       if (lesson.開始日) {
-        dateHtml += `<span class="card-date-item">${this.iconInline(CONFIG.ICONS.calendar, '#6B7280', 14)} 開始: ${this.formatDate(lesson.開始日)}</span>`;
+        const startSpan = document.createElement('span');
+        startSpan.className = 'card-date-item';
+        startSpan.innerHTML = `${this.iconInline(CONFIG.ICONS.calendar, '#6B7280', 14)} 開始: ${this.formatDate(lesson.開始日)}`;
+        dateRow.appendChild(startSpan);
       }
       if (lesson.納期) {
-        dateHtml += `<span class="card-date-item">${this.iconInline(CONFIG.ICONS.deadline, '#6B7280', 14)} 納期: ${this.formatDate(lesson.納期)}</span>`;
+        const deadlineSpan = document.createElement('span');
+        deadlineSpan.className = 'card-date-item';
+        deadlineSpan.innerHTML = `${this.iconInline(CONFIG.ICONS.deadline, '#6B7280', 14)} 納期: ${this.formatDate(lesson.納期)}`;
+        dateRow.appendChild(deadlineSpan);
       }
-      if (lesson.リリース日) {
-        dateHtml += `<span class="card-date-item">${this.iconInline(CONFIG.ICONS.release, '#6B7280', 14)} リリース: ${this.formatDate(lesson.リリース日)}</span>`;
-      }
-      dateRow.innerHTML = dateHtml;
+
+      // リリース日: 編集可能フィールド
+      const releaseDateField = this.createEditableDateField(
+        lesson.リリース日,
+        'リリース',
+        CONFIG.ICONS.release,
+        '#6B7280',
+        (newValue) => onEditField(lesson.rowIndex, 'リリース日', newValue)
+      );
+      dateRow.appendChild(releaseDateField);
+
       card.appendChild(dateRow);
     }
 
@@ -526,7 +706,7 @@ const Components = {
 
     const postSection = this.createProcessSection(
       '後工程', CONFIG.COLORS.後工程, CONFIG.COLORS.後工程Light,
-      CONFIG.後工程, lesson.後工程, lesson.rowIndex, onCheck, onReviewRequest
+      CONFIG.後工程, lesson.後工程, lesson.rowIndex, onCheck, onReviewRequest, lesson
     );
 
     card.appendChild(progressArea);
@@ -1356,6 +1536,15 @@ const Components = {
       items.push(`全${stats.total}件中${stats.inProgress}件が進行中、リリース済みはまだ0件`);
     }
 
+    // 項目1.5: toC/toB内訳
+    const tocCount = stats.tocCount || 0;
+    const tobCount = stats.tobCount || 0;
+    if (tocCount > 0 || tobCount > 0) {
+      items.push(`内訳: toC対象が${tocCount}件、toB対象が${tobCount}件`);
+    } else {
+      items.push(`toC / toB の対象区分はまだ未設定です`);
+    }
+
     // 項目2: ボトルネック
     if (stats.bottleneckSteps && stats.bottleneckSteps.length > 0) {
       const top = stats.bottleneckSteps[0];
@@ -1398,13 +1587,14 @@ const Components = {
     return panel;
   },
 
-  // ========== KPIストリップ（5カード横並び） ==========
+  // ========== KPIストリップ（6カード横並び） ==========
   createKpiStrip(stats) {
     const strip = document.createElement('div');
     strip.className = 'kpi-strip';
 
     const cards = [
-      { value: stats.total, label: '全教材', icon: CONFIG.ICONS.total, color: '#7C3AED' },
+      { value: stats.total, label: '全教材', icon: CONFIG.ICONS.total, color: '#7C3AED',
+        sub: { toc: stats.tocCount || 0, tob: stats.tobCount || 0 } },
       { value: stats.released, label: 'リリース済み', icon: CONFIG.ICONS.released, color: '#10B981' },
       { value: stats.nearRelease, label: 'リリース間近', icon: CONFIG.ICONS.nearRelease, color: '#F59E0B' },
       { value: stats.inProgress, label: '進行中', icon: CONFIG.ICONS.inProgress, color: '#7C3AED' },
@@ -1416,10 +1606,18 @@ const Components = {
       const card = document.createElement('div');
       card.className = 'kpi-card' + (c.value === 0 ? ' kpi-card--zero' : '');
       card.style.borderLeftColor = c.color;
+
+      const subHtml = c.sub ? `
+        <div class="kpi-sub-breakdown">
+          <span class="stat-sub-badge stat-sub-badge--toc">toC: ${c.sub.toc}</span>
+          <span class="stat-sub-badge stat-sub-badge--tob">toB: ${c.sub.tob}</span>
+        </div>` : '';
+
       card.innerHTML = `
         <div class="kpi-icon">${this.iconHtml(c.icon, c.color, 44)}</div>
         <div class="kpi-value" style="color:${c.color}">${c.value}</div>
         <div class="kpi-label">${c.label}</div>
+        ${subHtml}
       `;
       strip.appendChild(card);
     });
@@ -1677,11 +1875,24 @@ const Components = {
       <div class="assignee-section-label">ウェビナー（${data.webinars.length}件）</div>
       ${data.webinars.map(w => {
         const sCfg = CONFIG.WEBINAR_STATUSES.find(s => s.value === w.ステータス) || {};
-        return `<div class="assignee-lesson-row">
+        const dateStr = this.formatWebinarDate(w.開催日);
+        const overdueClass = this.getWebinarUrgencyClass(w);
+        return `<div class="assignee-lesson-row ${overdueClass}">
           <span class="assignee-lesson-name">${this.escapeHtml(w.ウェビナー名)}</span>
+          <span class="assignee-webinar-date">${dateStr}</span>
           <span class="assignee-lesson-progress" style="color:${sCfg.color || '#6B7280'}">${w.ステータス}</span>
         </div>`;
       }).join('')}
+    ` : '';
+
+    // toC/toB集計
+    const tocLessons = data.lessons.filter(l => l.対象 === 'toC').length;
+    const tobLessons = data.lessons.filter(l => l.対象 === 'toB').length;
+    const targetSummaryHtml = (tocLessons > 0 || tobLessons > 0) ? `
+      <div class="assignee-target-summary">
+        ${tocLessons > 0 ? '<span class="target-count target-count--toC">toC: ' + tocLessons + '件</span>' : ''}
+        ${tobLessons > 0 ? '<span class="target-count target-count--toB">toB: ' + tobLessons + '件</span>' : ''}
+      </div>
     ` : '';
 
     card.innerHTML = `
@@ -1689,6 +1900,7 @@ const Components = {
         <span class="assignee-name">${this.escapeHtml(name)}</span>
         <span class="workload-badge" style="background:${workloadCfg.color}">${workloadCfg.label}（${totalItems}件）</span>
       </div>
+      ${targetSummaryHtml}
       <div class="assignee-progress-bar">
         <div class="progress-bar">
           <div class="progress-fill" style="width:${avgProgress}%;background:${this.getGradient(CONFIG.COLORS.primary)}"></div>
@@ -1700,6 +1912,7 @@ const Components = {
         ${data.lessons.map(l => `
           <div class="assignee-lesson-row">
             <span class="assignee-lesson-name">${this.escapeHtml(l.レッスン名)}</span>
+            ${l.対象 ? '<span class="card-target-badge card-target-badge--' + l.対象 + '">' + l.対象 + '</span>' : ''}
             <span class="assignee-lesson-progress">${l.進捗率.全体}%</span>
           </div>
         `).join('')}
@@ -1714,6 +1927,96 @@ const Components = {
     if (count <= w.LIGHT.max) return w.LIGHT;
     if (count <= w.MEDIUM.max) return w.MEDIUM;
     return w.HEAVY;
+  },
+
+  // ========== ウェビナー日付ヘルパー ==========
+  formatWebinarDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return `${d.getMonth() + 1}月${d.getDate()}日`;
+  },
+
+  getWebinarUrgencyClass(webinar) {
+    if (!webinar.開催日 || webinar.ステータス === '実施済み' || webinar.ステータス === 'キャンセル') return '';
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const date = new Date(webinar.開催日); date.setHours(0, 0, 0, 0);
+    const diff = Math.floor((date - now) / (1000 * 60 * 60 * 24));
+    if (diff < 0) return 'webinar-overdue';
+    if (diff <= 7) return 'webinar-soon';
+    return '';
+  },
+
+  getWebinarDaysLabel(webinar) {
+    if (!webinar.開催日) return '';
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const date = new Date(webinar.開催日); date.setHours(0, 0, 0, 0);
+    const diff = Math.floor((date - now) / (1000 * 60 * 60 * 24));
+    if (webinar.ステータス === '実施済み') return '実施済み';
+    if (webinar.ステータス === 'キャンセル') return 'キャンセル';
+    if (diff < 0) return `${Math.abs(diff)}日超過`;
+    if (diff === 0) return '本日';
+    return `あと${diff}日`;
+  },
+
+  // ========== ウェビナースケジュールセクション ==========
+  createWebinarSchedule(webinars) {
+    const section = document.createElement('div');
+    section.className = 'review-section';
+
+    const title = document.createElement('h2');
+    title.className = 'review-section-title';
+    title.innerHTML = `${this.iconHtml('video', '#3B82F6', 32)} ウェビナースケジュール`;
+    section.appendChild(title);
+
+    if (!webinars || webinars.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'status-empty';
+      empty.textContent = '登録済みウェビナーはありません';
+      section.appendChild(empty);
+      return section;
+    }
+
+    // 開催日の近い順にソート
+    const sorted = [...webinars].sort((a, b) => {
+      const da = a.開催日 ? new Date(a.開催日).getTime() : Infinity;
+      const db = b.開催日 ? new Date(b.開催日).getTime() : Infinity;
+      return da - db;
+    });
+
+    const table = document.createElement('table');
+    table.className = 'webinar-schedule-table';
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>ウェビナー名</th>
+          <th>担当者</th>
+          <th>開催日</th>
+          <th>ステータス</th>
+          <th>残り</th>
+        </tr>
+      </thead>
+    `;
+
+    const tbody = document.createElement('tbody');
+    sorted.forEach(w => {
+      const sCfg = CONFIG.WEBINAR_STATUSES.find(s => s.value === w.ステータス) || {};
+      const urgency = this.getWebinarUrgencyClass(w);
+      const daysLabel = this.getWebinarDaysLabel(w);
+      const tr = document.createElement('tr');
+      tr.className = urgency;
+      tr.innerHTML = `
+        <td>${this.escapeHtml(w.ウェビナー名)}</td>
+        <td>${this.escapeHtml(w.担当者名 || '')}</td>
+        <td>${this.formatWebinarDate(w.開催日)}</td>
+        <td><span class="webinar-status-dot" style="color:${sCfg.color || '#6B7280'}">${w.ステータス}</span></td>
+        <td class="webinar-days-cell ${urgency}">${daysLabel}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    section.appendChild(table);
+    return section;
   },
 
   // ========== セクション4: 遅延アラート ==========

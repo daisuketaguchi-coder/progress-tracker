@@ -705,6 +705,56 @@ body {
   white-space: nowrap;
 }
 
+/* ----- 日付編集フィールド ----- */
+.editable-date-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.editable-date-field .btn-edit-date {
+  opacity: 0;
+  transition: opacity 0.15s;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  color: var(--color-text-sub);
+}
+.editable-date-field:hover .btn-edit-date {
+  opacity: 1;
+}
+.editable-date-display {
+  cursor: pointer;
+}
+.editable-date-editor {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.editable-date-input {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border: 1px solid var(--color-primary);
+  border-radius: 6px;
+  outline: none;
+}
+.editable-date-editor .btn-edit-confirm,
+.editable-date-editor .btn-edit-cancel {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.editable-date-editor .btn-edit-confirm {
+  background: var(--color-primary);
+  color: white;
+}
+.editable-date-editor .btn-edit-cancel {
+  background: #E5E7EB;
+  color: #374151;
+}
+
 /* ----- ガントチャート風タイムライン ----- */
 .card-timeline {
   padding: 8px 16px 12px;
@@ -903,6 +953,29 @@ body {
 .btn-review-request:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* ----- サムネイル依頼ひな型ボタン ----- */
+.btn-thumbnail-template {
+  margin-left: auto;
+  padding: 2px 10px;
+  font-size: 0.7rem;
+  height: 22px;
+  border: none;
+  background: #F59E0B;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.btn-thumbnail-template:hover {
+  background: #D97706;
 }
 
 /* ----- 工程リンクボタン ----- */
@@ -1720,7 +1793,7 @@ body {
 /* --- KPIストリップ --- */
 .kpi-strip {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
 
@@ -2306,6 +2379,7 @@ body {
 /* ----- レビューダッシュボード レスポンシブ ----- */
 @media (max-width: 768px) {
   .kpi-strip {
+    display: flex;
     flex-wrap: wrap;
     gap: 8px;
   }
@@ -3081,5 +3155,178 @@ body {
   .webinar-card-meta {
     flex-direction: column;
     gap: 4px;
+  }
+}
+
+/* ========== ウェビナースケジュール（定例レビュー） ========== */
+.webinar-schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.webinar-schedule-table thead {
+  background: linear-gradient(135deg, #7C3AED 0%, #3B82F6 100%);
+  color: #fff;
+}
+.webinar-schedule-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+.webinar-schedule-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #F3F4F6;
+}
+.webinar-schedule-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.webinar-schedule-table tbody tr:hover {
+  background: #F9FAFB;
+}
+.webinar-schedule-table tr.webinar-overdue {
+  background: #FEF2F2;
+}
+.webinar-schedule-table tr.webinar-overdue:hover {
+  background: #FEE2E2;
+}
+.webinar-schedule-table tr.webinar-soon {
+  background: #FFFBEB;
+}
+.webinar-schedule-table tr.webinar-soon:hover {
+  background: #FEF3C7;
+}
+.webinar-days-cell {
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+.webinar-days-cell.webinar-overdue {
+  color: #DC2626;
+}
+.webinar-days-cell.webinar-soon {
+  color: #D97706;
+}
+.webinar-status-dot {
+  font-weight: 500;
+}
+
+/* 担当者カード内ウェビナー日付 */
+.assignee-webinar-date {
+  font-size: 0.78rem;
+  color: #6B7280;
+  margin: 0 4px;
+  white-space: nowrap;
+}
+.assignee-lesson-row.webinar-overdue .assignee-webinar-date {
+  color: #DC2626;
+  font-weight: 600;
+}
+.assignee-lesson-row.webinar-soon .assignee-webinar-date {
+  color: #D97706;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .webinar-schedule-table th,
+  .webinar-schedule-table td {
+    padding: 8px 8px;
+    font-size: 0.8rem;
+  }
+}
+
+/* ========== toC/toB バッジ（レッスンカード用） ========== */
+.card-target-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.card-target-badge--toC {
+  background: #EFF6FF;
+  color: #2563EB;
+  border: 1px solid #BFDBFE;
+}
+.card-target-badge--toB {
+  background: #FFF7ED;
+  color: #EA580C;
+  border: 1px solid #FED7AA;
+}
+
+/* ========== 担当者カード toC/toB サマリー ========== */
+.assignee-target-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  margin: 6px 0 2px;
+  background: #F9FAFB;
+  border-radius: 8px;
+  font-size: 0.78rem;
+}
+.target-count {
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.target-count--toC {
+  color: #2563EB;
+  background: #EFF6FF;
+}
+.target-count--toB {
+  color: #EA580C;
+  background: #FFF7ED;
+}
+
+/* 担当者レッスン行内のバッジ微調整 */
+.assignee-lesson-row .card-target-badge {
+  font-size: 0.68rem;
+  padding: 1px 7px;
+  margin-left: auto;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+/* toC/toB サブ内訳バッジ（stat-card / kpi-card 内） */
+.stat-sub-breakdown,
+.kpi-sub-breakdown {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 0.72rem;
+}
+.stat-sub-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.stat-sub-badge--toc {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3B82F6;
+}
+.stat-sub-badge--tob {
+  background: rgba(249, 115, 22, 0.1);
+  color: #F97316;
+}
+
+/* レスポンシブ: サマリー3列→モバイルで1列 */
+@media (max-width: 640px) {
+  .summary-stat-row {
+    grid-template-columns: 1fr;
   }
 }

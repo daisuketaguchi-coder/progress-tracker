@@ -7,10 +7,32 @@ const SHEET_NAME = '教材制作進捗管理表';
 const DATA_START_ROW = 3; // ヘッダー2行の次
 
 // ===== Slack設定 =====
-// ここにSlack Incoming Webhook URLを設定してください
-const SLACK_WEBHOOK_URL = 'YOUR_SLACK_WEBHOOK_URL';
-// 通知を有効にするか（Webhook URL設定前はfalseにしておく）
-const SLACK_ENABLED = SLACK_WEBHOOK_URL !== 'YOUR_SLACK_WEBHOOK_URL';
+// Webhook URLはPropertiesServiceに安全に格納（コードに直書きしない）
+// 初回設定: GASエディタで setSlackWebhookUrl() を実行してURLをセット
+function getSlackWebhookUrl_() {
+  return PropertiesService.getScriptProperties().getProperty('SLACK_WEBHOOK_URL') || '';
+}
+function isSlackEnabled_() {
+  var url = getSlackWebhookUrl_();
+  return url !== '' && url !== 'YOUR_SLACK_WEBHOOK_URL';
+}
+// ===== SlackユーザーIDマッピング =====
+// 各メンバーのSlack User IDを設定（プロフィール → ⋯ → メンバーIDをコピー）
+const SLACK_USER_IDS = {
+  '田口大輔': 'U095FN7RXEZ',
+  '神戸薫': 'U08S9H571HT',
+  '梅村拓朗': 'U08NJ0F7D6X',
+  '留村': 'U_TOMEMURA',
+  '白石羽玖志': 'U_SHIRAISHI',
+  '東尾': 'U_HIGASHIO',
+  '西田': 'U_NISHIDA',
+  '柳川': 'U_YANAGAWA',
+  '栗田光': 'U_KURITA',
+  '小田和佳': 'U_ODA',
+  '浅井望': 'U_ASAI',
+  '西川': 'U_NISHIKAWA',
+  '木下': 'U_KINOSHITA'
+};
 
 // ===== Google Drive設定 =====
 const SPREADSHEET_ID = '1JfDogHdxI-mJtHfhtrTG1PyoIA5Xyxqaa3LQkxHAoPU';
@@ -62,7 +84,8 @@ const COLUMN_MAP = {
   '納期': 28,
   'リリース日': 29,
   'カテゴリ名': 30,
-  'コース名': 31
+  'コース名': 31,
+  '対象': 32
 };
 
 const PRE_PROCESS_KEYS = [
@@ -90,6 +113,12 @@ function doGet(e) {
         break;
       case 'getAllWebinars':
         result = getAllWebinars();
+        break;
+      case 'createBugSheet':
+        result = createBugReportSheet();
+        break;
+      case 'exportBugSheet':
+        result = exportBugSheetToNewSpreadsheet();
         break;
       default:
         result = { error: '不明なアクション: ' + action };
@@ -164,7 +193,7 @@ function getAllLessons() {
   }
 
   const numRows = lastRow - DATA_START_ROW + 1;
-  const data = sheet.getRange(DATA_START_ROW, 1, numRows, 31).getValues();
+  const data = sheet.getRange(DATA_START_ROW, 1, numRows, 32).getValues();
 
   const lessons = [];
   for (let i = 0; i < data.length; i++) {
@@ -210,7 +239,8 @@ function getAllLessons() {
       納期: (deadline instanceof Date) ? deadline.toISOString() : (deadline || ''),
       リリース日: (releaseDate instanceof Date) ? releaseDate.toISOString() : (releaseDate || ''),
       カテゴリ名: row[COLUMN_MAP['カテゴリ名'] - 1] || '',
-      コース名: row[COLUMN_MAP['コース名'] - 1] || ''
+      コース名: row[COLUMN_MAP['コース名'] - 1] || '',
+      対象: row[COLUMN_MAP['対象'] - 1] || ''
     });
   }
 
@@ -228,7 +258,7 @@ function updateCheckbox(rowIndex, columnName, value) {
   sheet.getRange(rowIndex, colNum).setValue(value === true);
 
   // 特定の列でチェックがONになった場合のみSlack通知を送信
-  if (value === true && SLACK_ENABLED && SLACK_NOTIFY_COLUMNS.includes(columnName)) {
+  if (value === true && isSlackEnabled_() && SLACK_NOTIFY_COLUMNS.includes(columnName)) {
     try {
       const assignee = sheet.getRange(rowIndex, COLUMN_MAP['担当者名']).getValue();
       const lessonName = sheet.getRange(rowIndex, COLUMN_MAP['レッスン名']).getValue();
@@ -269,6 +299,12 @@ function sendSlackNotification(assignee, lessonName, stepName, processType, prog
     message += '\n> 🎊 *' + processType + 'がすべて完了しました！*';
   }
 
+  // 田口大輔に@メンション
+  var taguchiId = SLACK_USER_IDS['田口大輔'];
+  if (taguchiId) {
+    message += '\n<@' + taguchiId + '>';
+  }
+
   const payload = {
     text: message,
     mrkdwn: true
@@ -281,7 +317,7 @@ function sendSlackNotification(assignee, lessonName, stepName, processType, prog
     muteHttpExceptions: true
   };
 
-  UrlFetchApp.fetch(SLACK_WEBHOOK_URL, options);
+  UrlFetchApp.fetch(getSlackWebhookUrl_(), options);
 }
 
 // ===== プログレスバー生成 =====
@@ -291,10 +327,16 @@ function createProgressBar(percent) {
   return '█'.repeat(filled) + '░'.repeat(empty);
 }
 
+// ===== レビューステップ別レビュアー =====
+const REVIEW_STEP_REVIEWERS = {
+  'アウトラインマネージャーCK': ['田口大輔', '神戸薫', '梅村拓朗'],
+  'スライド構成案マネージャーCK': ['田口大輔', '神戸薫', '梅村拓朗'],
+  '台本マネージャーCK': ['田口大輔', '神戸薫', '梅村拓朗']
+};
 // ===== レビュー依頼送信 =====
 function requestReview(rowIndex, columnName) {
-  if (!SLACK_ENABLED) {
-    return { error: 'Slack通知が無効です。SLACK_WEBHOOK_URLを設定してください。' };
+  if (!isSlackEnabled_()) {
+    return { error: 'Slack通知が無効です。setSlackWebhookUrl()でURLを設定してください。' };
   }
 
   const colNum = COLUMN_MAP[columnName];
@@ -328,9 +370,22 @@ function sendReviewRequestNotification(assignee, lessonName, stepName) {
     deliverableName = '台本';
   }
 
+  // レビュアーの@メンションを構築
+  var reviewers = REVIEW_STEP_REVIEWERS[stepName] || [];
+  var mentions = reviewers
+    .map(function(name) {
+      var userId = SLACK_USER_IDS[name];
+      return userId ? '<@' + userId + '>' : name;
+    })
+    .join(' ');
+
   var message = '📋 *レビュー依頼*\n';
   message += '> 📚 *' + lessonName + '* （担当: ' + assignee + '）\n';
   message += '> ' + deliverableName + 'のレビューをお願いします 🙏';
+
+  if (mentions) {
+    message += '\n' + mentions;
+  }
 
   var payload = {
     text: message,
@@ -344,7 +399,17 @@ function sendReviewRequestNotification(assignee, lessonName, stepName) {
     muteHttpExceptions: true
   };
 
-  UrlFetchApp.fetch(SLACK_WEBHOOK_URL, options);
+  UrlFetchApp.fetch(getSlackWebhookUrl_(), options);
+}
+
+// ===== Slack Webhook URL設定（初回のみGASエディタで実行） =====
+function setSlackWebhookUrl() {
+  var ui = SpreadsheetApp.getUi();
+  var result = ui.prompt('Slack Webhook URL を入力してください：');
+  if (result.getSelectedButton() === ui.Button.OK) {
+    PropertiesService.getScriptProperties().setProperty('SLACK_WEBHOOK_URL', result.getResponseText());
+    ui.alert('Slack Webhook URL を設定しました。');
+  }
 }
 
 // ===== 実データの最終行を取得（カラムA/Bの値で判定） =====
@@ -427,6 +492,9 @@ function addLessonWithData(data) {
   }
   if (data.コース名) {
     sheet.getRange(newRow, COLUMN_MAP['コース名']).setValue(data.コース名);
+  }
+  if (data.対象) {
+    sheet.getRange(newRow, COLUMN_MAP['対象']).setValue(data.対象);
   }
 
   // Google Driveにテンプレートフォルダをコピー（ベストエフォート）
@@ -571,12 +639,28 @@ function deleteWebinar(rowIndex) {
 }
 
 // ===== フィールド更新（担当者名・レッスン名） =====
-const EDITABLE_COLUMNS = ['担当者名', 'レッスン名', 'カテゴリ名', 'コース名'];
+const EDITABLE_COLUMNS = ['担当者名', 'レッスン名', 'カテゴリ名', 'コース名', '対象', 'リリース日'];
+const DATE_EDITABLE_COLUMNS = ['リリース日'];
 
 function updateField(rowIndex, columnName, value) {
   if (!EDITABLE_COLUMNS.includes(columnName)) {
     return { error: '編集不可の列: ' + columnName };
   }
+  // 日付列は空値（クリア）を許可
+  if (DATE_EDITABLE_COLUMNS.includes(columnName)) {
+    var colNum = COLUMN_MAP[columnName];
+    if (!colNum) {
+      return { error: '不明な列名: ' + columnName };
+    }
+    var sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
+    if (!value || (typeof value === 'string' && value.trim() === '')) {
+      sheet.getRange(rowIndex, colNum).setValue('');
+      return { success: true, rowIndex: rowIndex, columnName: columnName, value: '' };
+    }
+    sheet.getRange(rowIndex, colNum).setValue(new Date(value));
+    return { success: true, rowIndex: rowIndex, columnName: columnName, value: value };
+  }
+
   if (!value || (typeof value === 'string' && value.trim() === '')) {
     return { error: columnName + 'が空です' };
   }
@@ -587,4 +671,187 @@ function updateField(rowIndex, columnName, value) {
   var sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
   sheet.getRange(rowIndex, colNum).setValue(value.trim());
   return { success: true, rowIndex: rowIndex, columnName: columnName, value: value.trim() };
+}
+
+
+// ============================================================
+// バグ報告・要望シート 自動作成
+// ============================================================
+
+const BUG_SHEET_NAME = 'バグ報告・要望';
+
+function createBugReportSheet() {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+
+  // 既存シートがあれば削除して再作成
+  var existing = ss.getSheetByName(BUG_SHEET_NAME);
+  if (existing) {
+    ss.deleteSheet(existing);
+  }
+
+  var sheet = ss.insertSheet(BUG_SHEET_NAME);
+
+  // ===== ヘッダー設定 =====
+  var headers = ['No.', '報告日', '報告者', 'カテゴリー', '優先度', '内容', 'ステータス', '対応完了日', '対応コメント'];
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+
+  // ===== ヘッダー書式 =====
+  var headerRange = sheet.getRange(1, 1, 1, headers.length);
+  headerRange.setBackground('#1a237e');
+  headerRange.setFontColor('#ffffff');
+  headerRange.setFontWeight('bold');
+  headerRange.setHorizontalAlignment('center');
+  headerRange.setVerticalAlignment('middle');
+  headerRange.setFontSize(10);
+  sheet.setRowHeight(1, 36);
+
+  // ===== 行の固定 =====
+  sheet.setFrozenRows(1);
+
+  // ===== 列幅設定 =====
+  sheet.setColumnWidth(1, 50);   // No.
+  sheet.setColumnWidth(2, 110);  // 報告日
+  sheet.setColumnWidth(3, 110);  // 報告者
+  sheet.setColumnWidth(4, 130);  // カテゴリー
+  sheet.setColumnWidth(5, 70);   // 優先度
+  sheet.setColumnWidth(6, 420);  // 内容
+  sheet.setColumnWidth(7, 100);  // ステータス
+  sheet.setColumnWidth(8, 110);  // 対応完了日
+  sheet.setColumnWidth(9, 400);  // 対応コメント
+
+  // ===== データ領域の書式（100行分） =====
+  var dataRows = 100;
+
+  // No. 列: 中央揃え
+  sheet.getRange(2, 1, dataRows, 1).setHorizontalAlignment('center');
+
+  // 日付列: 日付書式
+  sheet.getRange(2, 2, dataRows, 1).setNumberFormat('yyyy/mm/dd');
+  sheet.getRange(2, 8, dataRows, 1).setNumberFormat('yyyy/mm/dd');
+
+  // 優先度・ステータス: 中央揃え
+  sheet.getRange(2, 5, dataRows, 1).setHorizontalAlignment('center');
+  sheet.getRange(2, 7, dataRows, 1).setHorizontalAlignment('center');
+
+  // 内容・コメント: テキスト折り返し
+  sheet.getRange(2, 6, dataRows, 1).setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
+  sheet.getRange(2, 9, dataRows, 1).setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
+
+  // ===== プルダウン（データバリデーション） =====
+  // 報告者
+  var reporters = SpreadsheetApp.newDataValidation()
+    .requireValueInList(['田口大輔','神戸薫','留村','白石羽玖志','東尾','西田','柳川','栗田光','小田和佳','浅井望','西川','木下'], true)
+    .setAllowInvalid(false)
+    .build();
+  sheet.getRange(2, 3, dataRows, 1).setDataValidation(reporters);
+
+  // カテゴリー
+  var categories = SpreadsheetApp.newDataValidation()
+    .requireValueInList(['バグ（表示）','バグ（機能）','バグ（データ）','改善要望','その他'], true)
+    .setAllowInvalid(false)
+    .build();
+  sheet.getRange(2, 4, dataRows, 1).setDataValidation(categories);
+
+  // 優先度
+  var priorities = SpreadsheetApp.newDataValidation()
+    .requireValueInList(['高','中','低'], true)
+    .setAllowInvalid(false)
+    .build();
+  sheet.getRange(2, 5, dataRows, 1).setDataValidation(priorities);
+
+  // ステータス
+  var statuses = SpreadsheetApp.newDataValidation()
+    .requireValueInList(['未対応','対応中','対応済','保留'], true)
+    .setAllowInvalid(false)
+    .build();
+  sheet.getRange(2, 7, dataRows, 1).setDataValidation(statuses);
+
+  // ===== 条件付き書式 =====
+  var rules = sheet.getConditionalFormatRules();
+
+  // ステータス「未対応」→ 薄い赤背景
+  var ruleOpen = SpreadsheetApp.newConditionalFormatRule()
+    .whenTextEqualTo('未対応')
+    .setBackground('#f4cccc')
+    .setRanges([sheet.getRange(2, 7, dataRows, 1)])
+    .build();
+  rules.push(ruleOpen);
+
+  // ステータス「対応中」→ 薄い黄背景
+  var ruleWip = SpreadsheetApp.newConditionalFormatRule()
+    .whenTextEqualTo('対応中')
+    .setBackground('#fff2cc')
+    .setRanges([sheet.getRange(2, 7, dataRows, 1)])
+    .build();
+  rules.push(ruleWip);
+
+  // ステータス「対応済」→ 薄い緑背景
+  var ruleDone = SpreadsheetApp.newConditionalFormatRule()
+    .whenTextEqualTo('対応済')
+    .setBackground('#d9ead3')
+    .setRanges([sheet.getRange(2, 7, dataRows, 1)])
+    .build();
+  rules.push(ruleDone);
+
+  // ステータス「保留」→ 薄いグレー背景
+  var ruleHold = SpreadsheetApp.newConditionalFormatRule()
+    .whenTextEqualTo('保留')
+    .setBackground('#d9d9d9')
+    .setRanges([sheet.getRange(2, 7, dataRows, 1)])
+    .build();
+  rules.push(ruleHold);
+
+  // 優先度「高」→ 赤文字太字
+  var ruleHighPri = SpreadsheetApp.newConditionalFormatRule()
+    .whenTextEqualTo('高')
+    .setFontColor('#cc0000')
+    .setBold(true)
+    .setRanges([sheet.getRange(2, 5, dataRows, 1)])
+    .build();
+  rules.push(ruleHighPri);
+
+  sheet.setConditionalFormatRules(rules);
+
+  // ===== 罫線（ヘッダー下） =====
+  headerRange.setBorder(null, null, true, null, null, null, '#1a237e', SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+
+  return { success: true, message: 'バグ報告・要望シートを作成しました' };
+}
+
+// ===== バグ報告・要望シートを新しいスプレッドシートに切り出し =====
+function exportBugSheetToNewSpreadsheet() {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var bugSheet = ss.getSheetByName(BUG_SHEET_NAME);
+
+  if (!bugSheet) {
+    return { error: 'バグ報告・要望シートが見つかりません' };
+  }
+
+  // 新しいスプレッドシートを作成
+  var newSs = SpreadsheetApp.create('バグ報告・要望管理');
+
+  // 既存シートを新スプレッドシートにコピー
+  var copiedSheet = bugSheet.copyTo(newSs);
+  copiedSheet.setName(BUG_SHEET_NAME);
+
+  // 1行目を固定
+  copiedSheet.setFrozenRows(1);
+
+  // デフォルトの空シートを削除
+  var sheets = newSs.getSheets();
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].getName() !== BUG_SHEET_NAME) {
+      newSs.deleteSheet(sheets[i]);
+    }
+  }
+
+  // 元のスプレッドシートからシートを削除
+  ss.deleteSheet(bugSheet);
+
+  return {
+    success: true,
+    message: 'バグ報告・要望シートを新しいスプレッドシートに切り出しました',
+    url: newSs.getUrl(),
+    id: newSs.getId()
+  };
 }
