@@ -7,6 +7,7 @@ const App = {
     lessons: [],
     webinars: [],
     filterAssignee: 'all',
+    hideCompleted: false,
     isLoading: true,
     pollTimer: null,
     currentView: 'progress',
@@ -24,6 +25,12 @@ const App = {
     // イベントリスナー
     document.getElementById('filterAssignee').addEventListener('change', (e) => {
       this.state.filterAssignee = e.target.value;
+      this.renderStepProgressView();
+      this.renderLessons();
+    });
+
+    document.getElementById('hideCompletedCheck').addEventListener('change', (e) => {
+      this.state.hideCompleted = e.target.checked;
       this.renderStepProgressView();
       this.renderLessons();
     });
@@ -128,6 +135,9 @@ const App = {
     if (this.state.filterAssignee !== 'all') {
       filtered = filtered.filter(l => l.担当者名 === this.state.filterAssignee);
     }
+    if (this.state.hideCompleted) {
+      filtered = filtered.filter(l => l.進捗率.全体 < 100);
+    }
 
     if (filtered.length === 0) return;
 
@@ -187,6 +197,9 @@ const App = {
     let filtered = this.state.lessons;
     if (this.state.filterAssignee !== 'all') {
       filtered = filtered.filter(l => l.担当者名 === this.state.filterAssignee);
+    }
+    if (this.state.hideCompleted) {
+      filtered = filtered.filter(l => l.進捗率.全体 < 100);
     }
 
     if (filtered.length === 0) {
